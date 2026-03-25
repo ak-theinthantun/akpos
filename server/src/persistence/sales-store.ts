@@ -1,14 +1,16 @@
 import { Pool } from 'pg';
 import type { SyncedSaleRecord } from '../types/sales';
+import { getServerEnv } from '../config/env';
 
 let pool: Pool | null = null;
 const memorySales: SyncedSaleRecord[] = [];
 
 function getPool() {
-  if (!process.env.DATABASE_URL) return null;
+  const env = getServerEnv();
+  if (!env.databaseUrl) return null;
   if (!pool) {
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: env.databaseUrl,
     });
   }
   return pool;

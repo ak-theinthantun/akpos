@@ -78,9 +78,11 @@ If Render asks for the port, use:
 In the Render web service, add:
 
 ```env
+NODE_ENV=production
 PORT=10000
 DATABASE_URL=<Render internal Postgres URL>
 JWT_SECRET=<long-random-secret>
+CORS_ORIGIN=https://your-app-domain.com,https://expo.dev
 ```
 
 Recommendations:

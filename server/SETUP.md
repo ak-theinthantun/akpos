@@ -39,9 +39,11 @@ cp .env.example .env
 Edit `server/.env` with your local database:
 
 ```env
+NODE_ENV=development
 PORT=4000
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/akpos
 JWT_SECRET=replace-with-long-random-secret
+CORS_ORIGIN=http://localhost:8081,http://localhost:19006
 ```
 
 ## 5. Run Server Locally
@@ -75,9 +77,11 @@ cp .env.production.example .env.production
 Fill real values:
 
 ```env
-PORT=4000
+NODE_ENV=production
+PORT=10000
 DATABASE_URL=postgres://username:password@host:5432/akpos
 JWT_SECRET=replace-with-long-random-secret
+CORS_ORIGIN=https://your-app-domain.com,https://expo.dev
 ```
 
 If `DATABASE_URL` is present and reachable, the server will automatically:
@@ -124,9 +128,11 @@ npm run start
 
 ### Required env vars
 
+- `NODE_ENV`
 - `PORT`
 - `DATABASE_URL`
 - `JWT_SECRET`
+- `CORS_ORIGIN`
 
 ## 10. Recommended First Production Check
 

@@ -3,17 +3,32 @@ import cors from 'cors';
 import { authRouter } from './routes/auth';
 import { syncRouter } from './routes/sync';
 import { getPersistenceMode } from './persistence/sales-store';
+import { getServerEnv } from './config/env';
 
 export function createApp() {
   const app = express();
+  const env = getServerEnv();
+  const allowAllOrigins = env.corsOrigins.length === 0;
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (allowAllOrigins || !origin || env.corsOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origin ${origin} is not allowed by CORS`));
+      },
+    })
+  );
   app.use(express.json());
 
   app.get('/health', (_req, res) => {
     res.json({
       ok: true,
       service: 'akpos-server',
+      env: env.nodeEnv,
       persistence: getPersistenceMode(),
       timestamp: new Date().toISOString(),
     });

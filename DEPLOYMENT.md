@@ -82,9 +82,11 @@ into:
 Example:
 
 ```env
+NODE_ENV=production
 PORT=4000
 DATABASE_URL=postgres://username:password@host:5432/akpos
 JWT_SECRET=replace-with-long-random-secret
+CORS_ORIGIN=https://your-app-domain.com,https://expo.dev
 ```
 
 ## Step 3: Run Backend Locally
@@ -140,9 +142,11 @@ npm run start
 
 Required environment variables:
 
+- `NODE_ENV`
 - `PORT`
 - `DATABASE_URL`
 - `JWT_SECRET`
+- `CORS_ORIGIN`
 
 Server-specific setup guide:
 
