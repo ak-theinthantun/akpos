@@ -2,7 +2,10 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { salesRepository } from '@/db/repositories/sales-repository';
+import { syncStateRepository } from '@/db/repositories/sync-state-repository';
 import { syncQueueRepository } from '@/db/repositories/sync-queue-repository';
+import { runSync } from '@/services/sync/sync-engine';
+import { getStoredSession } from '@/store/session-store';
 
 interface OrderItem {
   id: string;
@@ -24,29 +27,42 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [pendingEntityIds, setPendingEntityIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncMessage, setSyncMessage] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastCursor, setLastCursor] = useState<string | null>(null);
+
+  async function loadOrders() {
+    const [sales, queue, cursor] = await Promise.all([
+      salesRepository.list(),
+      syncQueueRepository.listAll(),
+      syncStateRepository.get('last_pull_cursor'),
+    ]);
+
+    setOrders(
+      sales.map((sale) => ({
+        id: sale.id,
+        receiptNo: sale.receiptNo,
+        date: sale.date,
+        time: sale.time,
+        customerId: sale.customerId,
+        total: sale.total,
+        status: sale.status,
+        paymentMethod: sale.paymentMethod,
+        itemCount: sale.items.reduce((sum, item) => sum + item.quantity, 0),
+      }))
+    );
+    setPendingEntityIds(
+      queue.filter((item) => item.entityType === 'sale' && item.status !== 'synced').map((item) => item.entityId)
+    );
+    setLastCursor(cursor);
+  }
 
   useEffect(() => {
     let mounted = true;
 
-    Promise.all([salesRepository.list(), syncQueueRepository.listAll()])
-      .then(([sales, queue]) => {
+    loadOrders()
+      .then(() => {
         if (!mounted) return;
-        setOrders(
-          sales.map((sale) => ({
-            id: sale.id,
-            receiptNo: sale.receiptNo,
-            date: sale.date,
-            time: sale.time,
-            customerId: sale.customerId,
-            total: sale.total,
-            status: sale.status,
-            paymentMethod: sale.paymentMethod,
-            itemCount: sale.items.reduce((sum, item) => sum + item.quantity, 0),
-          }))
-        );
-        setPendingEntityIds(
-          queue.filter((item) => item.entityType === 'sale' && item.status !== 'synced').map((item) => item.entityId)
-        );
       })
       .finally(() => {
         if (mounted) setIsLoading(false);
@@ -65,11 +81,49 @@ export default function OrdersScreen() {
     };
   }, [orders, pendingEntityIds]);
 
+  async function handleSyncNow() {
+    try {
+      setIsSyncing(true);
+      setSyncMessage('');
+      const session = await getStoredSession();
+      if (!session.token || !session.deviceId) {
+        setSyncMessage('Login is required before syncing.');
+        return;
+      }
+
+      const result = await runSync(session.token, session.deviceId);
+      await loadOrders();
+      setSyncMessage(`Synced ${result.pushed} push / ${result.pulled} pull changes.`);
+    } catch (error) {
+      setSyncMessage(error instanceof Error ? error.message : 'Sync failed.');
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f4' }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e7e5e4', backgroundColor: '#ffffff' }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#171717' }}>Orders</Text>
         <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>Local sales saved on device.</Text>
+        <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <Text style={{ flex: 1, fontSize: 11, color: '#6b7280' }}>
+            {lastCursor ? `Last sync cursor: ${lastCursor}` : 'No sync cursor yet'}
+          </Text>
+          <Pressable
+            onPress={handleSyncNow}
+            disabled={isSyncing}
+            style={{
+              borderRadius: 999,
+              backgroundColor: '#16a34a',
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              opacity: isSyncing ? 0.6 : 1,
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>{isSyncing ? 'Syncing...' : 'Sync Now'}</Text>
+          </Pressable>
+        </View>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
           <Pressable onPress={() => router.replace('/(main)/sale')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Sale</Text>
@@ -90,6 +144,13 @@ export default function OrdersScreen() {
           <Text style={{ marginTop: 6, fontSize: 18, fontWeight: '700', color: '#d97706' }}>{summary.pending}</Text>
         </View>
       </View>
+      {syncMessage ? (
+        <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
+          <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 10 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#166534' }}>{syncMessage}</Text>
+          </View>
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 }}>
         {isLoading ? (
