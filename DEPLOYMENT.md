@@ -114,7 +114,13 @@ Expected health payload includes:
 
 ## Step 4: Deploy Backend
 
-### Railway / Render style deployment
+### Recommended production path: Render
+
+Use this exact guide:
+
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md)
+
+### Generic hosted deployment
 
 Deploy folder:
 
@@ -141,6 +147,7 @@ Required environment variables:
 Server-specific setup guide:
 
 - [`/Users/ethanhtoon/Documents/theo/projects/vopos/server/SETUP.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/server/SETUP.md)
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md)
 
 After deploy, note the public backend URL.
 

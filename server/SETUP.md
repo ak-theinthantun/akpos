@@ -102,6 +102,14 @@ npm run start
 
 ## 9. Recommended Hosting Config
 
+Recommended production provider:
+
+- Render
+
+Exact provider setup guide:
+
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md)
+
 ### Build command
 
 ```bash
