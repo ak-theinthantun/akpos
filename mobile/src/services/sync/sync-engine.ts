@@ -1,9 +1,11 @@
 import { customersRepository } from '@/db/repositories/customers-repository';
 import { productsRepository } from '@/db/repositories/products-repository';
+import { syncStateRepository } from '@/db/repositories/sync-state-repository';
 import { syncQueueRepository } from '@/db/repositories/sync-queue-repository';
 import { pullSync, pushSync } from '../api/sync-api';
 
 export async function runSync(token: string, deviceId: string, cursor: string | null = null) {
+  const activeCursor = cursor ?? await syncStateRepository.get('last_pull_cursor');
   const pending = await syncQueueRepository.listPending();
 
   if (pending.length > 0) {
@@ -27,7 +29,7 @@ export async function runSync(token: string, deviceId: string, cursor: string | 
     }
   }
 
-  const pulled = await pullSync(cursor, token);
+  const pulled = await pullSync(activeCursor, token);
 
   await productsRepository.saveMany((pulled.changes.products as Array<Record<string, unknown>> | undefined)?.map(product => ({
     id: String(product.id),
@@ -46,6 +48,8 @@ export async function runSync(token: string, deviceId: string, cursor: string | 
     type: (customer.type === 'wholesale' ? 'wholesale' : 'regular') as 'regular' | 'wholesale',
     active: Boolean(customer.active ?? true),
   })) ?? []);
+
+  await syncStateRepository.set('last_pull_cursor', pulled.cursor);
 
   return {
     pushed: pending.length,
