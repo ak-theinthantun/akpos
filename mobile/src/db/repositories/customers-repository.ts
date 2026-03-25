@@ -48,4 +48,36 @@ export const customersRepository = {
     );
     return customer;
   },
+
+  async saveMany(
+    customers: Array<{
+      id: string;
+      name: string;
+      phone?: string;
+      type: 'regular' | 'wholesale';
+      active?: boolean;
+      notes?: string;
+      createdAt?: string;
+      updatedAt?: string;
+    }>
+  ) {
+    const db = await getDb();
+    const now = new Date().toISOString();
+
+    for (const customer of customers) {
+      await db.runAsync(
+        `INSERT OR REPLACE INTO customers (
+          id, name, phone, type, active, notes, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        customer.id,
+        customer.name,
+        customer.phone ?? '',
+        customer.type,
+        customer.active === false ? 0 : 1,
+        customer.notes ?? '',
+        customer.createdAt ?? now.slice(0, 10),
+        customer.updatedAt ?? now
+      );
+    }
+  },
 };

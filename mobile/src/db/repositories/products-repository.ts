@@ -40,4 +40,48 @@ export const productsRepository = {
       updatedAt: row.updated_at,
     }));
   },
+
+  async saveMany(
+    products: Array<{
+      id: string;
+      name: string;
+      price: number;
+      wholesalePrice?: number;
+      costPrice?: number;
+      categoryId?: string | null;
+      unitLabel?: string;
+      supplierId?: string | null;
+      sku?: string;
+      image?: string;
+      active?: boolean;
+      currentStock?: number;
+      createdAt?: string;
+      updatedAt?: string;
+    }>
+  ) {
+    const db = await getDb();
+    const now = new Date().toISOString();
+
+    for (const product of products) {
+      await db.runAsync(
+        `INSERT OR REPLACE INTO products (
+          id, name, price, wholesale_price, cost_price, category_id, unit_label, supplier_id, sku, image, active, current_stock, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        product.id,
+        product.name,
+        product.price,
+        product.wholesalePrice ?? product.price,
+        product.costPrice ?? 0,
+        product.categoryId ?? null,
+        product.unitLabel ?? '',
+        product.supplierId ?? null,
+        product.sku ?? '',
+        product.image ?? '',
+        product.active === false ? 0 : 1,
+        product.currentStock ?? 0,
+        product.createdAt ?? now,
+        product.updatedAt ?? now
+      );
+    }
+  },
 };

@@ -42,5 +42,5 @@ export const syncQueueRepository = {
       new Date().toISOString(),
       id
     );
-  },
+  }
 };
