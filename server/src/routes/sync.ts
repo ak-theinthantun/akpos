@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { demoChanges } from '../data/demo';
+import { appendSyncedSale, getDemoChanges } from '../data/demo';
 
 const pushItemSchema = z.object({
   queueId: z.string().min(1),
@@ -28,6 +28,15 @@ syncRouter.post('/push', (req, res) => {
     });
   }
 
+  parsed.data.items.forEach((item) => {
+    if (item.entityType === 'sale' && item.operation === 'sale.create') {
+      const sale = item.payload.sale;
+      if (sale && typeof sale === 'object') {
+        appendSyncedSale(sale as Record<string, unknown>);
+      }
+    }
+  });
+
   return res.json({
     acked: parsed.data.items.map(item => ({
       queueId: item.queueId,
@@ -43,6 +52,6 @@ syncRouter.get('/pull', (req, res) => {
 
   return res.json({
     cursor: cursor ?? `dev-cursor-${Date.now()}`,
-    changes: demoChanges,
+    changes: getDemoChanges(),
   });
 });
