@@ -22,3 +22,16 @@ npm run dev
 - `EXPO_PUBLIC_API_BASE_URL`
 - `EXPO_PUBLIC_SHOP_ID`
 - `EXPO_PUBLIC_ENV_NAME`
+
+## Build path
+
+For Android builds, use Expo EAS:
+
+```bash
+npx eas init
+npx eas build --platform android --profile preview
+```
+
+See:
+
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/DEPLOYMENT.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/DEPLOYMENT.md)
