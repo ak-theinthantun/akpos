@@ -67,6 +67,11 @@ export const salesRepository = {
     }));
   },
 
+  async getById(id: string): Promise<Sale | null> {
+    const sales = await this.list();
+    return sales.find((sale) => sale.id === id) ?? null;
+  },
+
   async save(sale: Sale) {
     const db = await getDb();
     const now = new Date().toISOString();

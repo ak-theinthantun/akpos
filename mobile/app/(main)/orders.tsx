@@ -164,7 +164,11 @@ export default function OrdersScreen() {
           orders.map((order) => {
             const isPending = pendingEntityIds.includes(order.id);
             return (
-              <View key={order.id} style={{ borderRadius: 14, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', padding: 14, marginBottom: 10 }}>
+              <Pressable
+                key={order.id}
+                onPress={() => router.push(`/(main)/orders/${order.id}`)}
+                style={{ borderRadius: 14, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', padding: 14, marginBottom: 10 }}
+              >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 15, fontWeight: '700', color: '#171717' }}>{order.receiptNo}</Text>
@@ -180,7 +184,7 @@ export default function OrdersScreen() {
                     </View>
                   </View>
                 </View>
-              </View>
+              </Pressable>
             );
           })
         )}
