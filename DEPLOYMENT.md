@@ -73,6 +73,7 @@ The current server will automatically switch from memory mode to Postgres mode w
 Copy:
 
 - [`/Users/ethanhtoon/Documents/theo/projects/vopos/server/.env.example`](/Users/ethanhtoon/Documents/theo/projects/vopos/server/.env.example)
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/server/.env.production.example`](/Users/ethanhtoon/Documents/theo/projects/vopos/server/.env.production.example)
 
 into:
 
@@ -136,6 +137,10 @@ Required environment variables:
 - `PORT`
 - `DATABASE_URL`
 - `JWT_SECRET`
+
+Server-specific setup guide:
+
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/server/SETUP.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/server/SETUP.md)
 
 After deploy, note the public backend URL.
 
