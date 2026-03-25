@@ -60,19 +60,17 @@ npx eas init
 
 This will create or link an Expo project and show an EAS project id.
 
-## 6. Update `mobile/app.json`
+## 6. Update Expo EAS Project Id
 
 Open:
 
-- [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.json`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.json)
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env)
 
-Replace:
+After `eas init`, add:
 
-```json
-"projectId": "replace-with-eas-project-id"
+```env
+EXPO_PUBLIC_EAS_PROJECT_ID=your-real-eas-project-id
 ```
-
-with the real project id from `eas init`.
 
 ## 7. Build First Preview APK
 
