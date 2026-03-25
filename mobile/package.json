@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "expo start",
     "android": "expo run:android",
