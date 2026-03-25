@@ -155,6 +155,7 @@ https://api.akpos.example.com
 Copy:
 
 - [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env.example`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env.example)
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env.production.example`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env.production.example)
 
 into:
 
@@ -166,6 +167,7 @@ Example:
 EXPO_PUBLIC_API_BASE_URL=https://api.akpos.example.com
 EXPO_PUBLIC_SHOP_ID=shop_1
 EXPO_PUBLIC_ENV_NAME=production
+EXPO_PUBLIC_EAS_PROJECT_ID=replace-with-real-eas-project-id
 ```
 
 ## Step 6: Create Expo Project And Link EAS
@@ -180,13 +182,13 @@ npx eas login
 npx eas init
 ```
 
-After `eas init`, replace:
+After `eas init`, set the real EAS project id in:
 
-- `replace-with-eas-project-id`
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env)
 
-inside [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.json`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.json)
+The Expo config now reads it from:
 
-with the real EAS project id.
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.config.ts`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.config.ts)
 
 ## Step 7: Run Mobile Locally
 

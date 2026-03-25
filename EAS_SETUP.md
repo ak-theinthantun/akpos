@@ -35,6 +35,7 @@ Edit `mobile/.env`:
 EXPO_PUBLIC_API_BASE_URL=https://your-api-domain.com
 EXPO_PUBLIC_SHOP_ID=shop_1
 EXPO_PUBLIC_ENV_NAME=preview
+EXPO_PUBLIC_EAS_PROJECT_ID=
 ```
 
 For local testing only:
@@ -43,6 +44,7 @@ For local testing only:
 EXPO_PUBLIC_API_BASE_URL=http://localhost:4000
 EXPO_PUBLIC_SHOP_ID=shop_1
 EXPO_PUBLIC_ENV_NAME=development
+EXPO_PUBLIC_EAS_PROJECT_ID=
 ```
 
 ## 4. Login To Expo And EAS
