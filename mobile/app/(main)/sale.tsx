@@ -3,10 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { productsRepository } from '@/db/repositories/products-repository';
 import { customersRepository } from '@/db/repositories/customers-repository';
-import { salesRepository } from '@/db/repositories/sales-repository';
-import { syncQueueRepository } from '@/db/repositories/sync-queue-repository';
-import { generateId } from '@/utils/ids';
-import { getStoredSession } from '@/store/session-store';
+import { setCartDraft } from '@/store/cart-draft-store';
 
 interface MobileProduct {
   id: string;
@@ -34,7 +31,6 @@ export default function SaleScreen() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [cartCounts, setCartCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -67,13 +63,9 @@ export default function SaleScreen() {
     return sum + unitPrice * qty;
   }, 0);
 
-  async function handleCompleteLocalSale() {
+  async function handleReviewCart() {
     if (cartCount === 0) return;
 
-    const session = await getStoredSession();
-    const now = new Date();
-    const saleId = generateId('sale');
-    const receiptNo = `M-${Date.now().toString().slice(-6)}`;
     const items = products
       .filter(product => (cartCounts[product.id] ?? 0) > 0)
       .map(product => {
@@ -90,49 +82,19 @@ export default function SaleScreen() {
         };
       });
 
-    const sale = {
-      id: saleId,
-      receiptNo,
-      date: now.toISOString().slice(0, 10),
-      time: now.toLocaleTimeString(),
-      sessionId: null,
-      customerId: selectedCustomer?.id ?? null,
-      staffId: session.userId ?? 'u1',
-      subtotal: cartTotal,
-      discount: 0,
-      total: cartTotal,
-      paymentMethod: 'cash' as const,
-      amountPaid: cartTotal,
-      change: 0,
-      status: 'completed' as const,
+    await setCartDraft({
+      customer: selectedCustomer
+        ? {
+            id: selectedCustomer.id,
+            name: selectedCustomer.name,
+            type: selectedCustomer.type,
+          }
+        : null,
       items,
-      paymentHistory: [],
-    };
-
-    await salesRepository.save(sale);
-    await syncQueueRepository.enqueue({
-      id: generateId('queue'),
-      entityType: 'sale',
-      entityId: sale.id,
-      operation: 'sale.create',
-      payloadJson: JSON.stringify({
-        sale,
-        saleItems: sale.items,
-        payments: [],
-        stockMovements: [],
-      }),
-      deviceId: session.deviceId ?? 'android-dev-1',
-      status: 'pending',
-      retryCount: 0,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-      syncedAt: null,
-      lastError: null,
+      total: cartTotal,
+      updatedAt: new Date().toISOString(),
     });
-
-    setCartCounts({});
-    setSaveMessage(`Saved ${receiptNo} locally and queued for sync.`);
-    setTimeout(() => setSaveMessage(''), 2500);
+    router.push('/(main)/cart-review');
   }
 
   return (
@@ -226,12 +188,9 @@ export default function SaleScreen() {
         )}
       </ScrollView>
       <View style={{ borderTopWidth: 1, borderTopColor: '#e7e5e4', backgroundColor: '#ffffff', padding: 16 }}>
-        {saveMessage ? (
-          <Text style={{ marginBottom: 10, fontSize: 12, color: '#166534', fontWeight: '600', textAlign: 'center' }}>{saveMessage}</Text>
-        ) : null}
-        <Pressable onPress={handleCompleteLocalSale} style={{ borderRadius: 14, backgroundColor: '#16a34a', paddingVertical: 14, alignItems: 'center', opacity: cartCount === 0 ? 0.6 : 1 }} disabled={cartCount === 0}>
+        <Pressable onPress={handleReviewCart} style={{ borderRadius: 14, backgroundColor: '#16a34a', paddingVertical: 14, alignItems: 'center', opacity: cartCount === 0 ? 0.6 : 1 }} disabled={cartCount === 0}>
           <Text style={{ color: '#ffffff', fontWeight: '700' }}>
-            Complete Local Sale {cartCount > 0 ? `• ${cartCount} items • ${formatCurrency(cartTotal)}` : ''}
+            Review Cart {cartCount > 0 ? `• ${cartCount} items • ${formatCurrency(cartTotal)}` : ''}
           </Text>
         </Pressable>
       </View>
