@@ -207,9 +207,23 @@ export interface StoreSettings {
   receiptFooter: string;
   currency: string;
   currencySymbol: string;
+  priceLockerPassword: string;
   posTextScale: number;
   posDefaultGridCols: number;
 }
+
+export const defaultStoreSettings: StoreSettings = {
+  shopName: 'My Shop',
+  address: '123 Main Street, Yangon',
+  phone: '09-000-1234',
+  receiptHeader: 'Thank you for shopping!',
+  receiptFooter: 'Please come again.',
+  currency: 'MMK',
+  currencySymbol: 'Ks',
+  priceLockerPassword: '0000',
+  posTextScale: 0,
+  posDefaultGridCols: 4,
+};
 
 export interface POSState {
   currentUser: User | null;
@@ -485,18 +499,7 @@ export const initialState: POSState = {
   pastSessions: [],
   cart: [],
   selectedCustomer: null,
-  settings: {
-    shopName: 'My Shop',
-    address: '123 Main Street, Yangon',
-    phone: '09-000-1234',
-    receiptHeader: 'Thank you for shopping!',
-    receiptFooter: 'Please come again.',
-    currency: 'MMK',
-    currencySymbol: 'Ks',
-    posTextScale: 0,
-    posDefaultGridCols: 4,
-    priceLockerPassword: '0000',
-  },
+  settings: defaultStoreSettings,
   activeScreen: 'login',
 };
 

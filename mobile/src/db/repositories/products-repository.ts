@@ -1,5 +1,43 @@
+import { getDb } from '../client';
+
+interface ProductRow {
+  id: string;
+  name: string;
+  price: number;
+  wholesale_price: number;
+  cost_price: number;
+  category_id: string | null;
+  unit_label: string;
+  supplier_id: string | null;
+  sku: string;
+  image: string;
+  active: number;
+  current_stock: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const productsRepository = {
   async list() {
-    return [];
+    const db = await getDb();
+    const rows = await db.getAllAsync<ProductRow>(
+      'SELECT * FROM products WHERE active = 1 ORDER BY name ASC'
+    );
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      price: row.price,
+      wholesalePrice: row.wholesale_price,
+      costPrice: row.cost_price,
+      categoryId: row.category_id,
+      unitLabel: row.unit_label,
+      supplierId: row.supplier_id,
+      sku: row.sku,
+      image: row.image,
+      active: row.active === 1,
+      stock: row.current_stock,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
   },
 };

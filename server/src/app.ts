@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { authRouter } from './routes/auth';
+import { syncRouter } from './routes/sync';
 
 export function createApp() {
   const app = express();
@@ -15,26 +17,8 @@ export function createApp() {
     });
   });
 
-  app.post('/auth/login', (_req, res) => {
-    res.status(501).json({
-      ok: false,
-      message: 'Login is not implemented yet.',
-    });
-  });
-
-  app.post('/sync/push', (_req, res) => {
-    res.status(501).json({
-      ok: false,
-      message: 'Push sync is not implemented yet.',
-    });
-  });
-
-  app.get('/sync/pull', (_req, res) => {
-    res.status(501).json({
-      ok: false,
-      message: 'Pull sync is not implemented yet.',
-    });
-  });
+  app.use('/auth', authRouter);
+  app.use('/sync', syncRouter);
 
   return app;
 }
