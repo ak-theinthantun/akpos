@@ -44,22 +44,9 @@ export const demoChanges = {
   stockMovements: [],
 };
 
-type SyncedSaleRecord = Record<string, unknown>;
-
-const syncedSalesStore: SyncedSaleRecord[] = [];
-
-export function appendSyncedSale(sale: SyncedSaleRecord) {
-  const existingIndex = syncedSalesStore.findIndex((item) => item.id === sale.id);
-  if (existingIndex >= 0) {
-    syncedSalesStore[existingIndex] = sale;
-    return;
-  }
-  syncedSalesStore.unshift(sale);
-}
-
-export function getDemoChanges() {
+export function getBaseDemoChanges() {
   return {
     ...demoChanges,
-    sales: [...syncedSalesStore, ...demoChanges.sales],
+    sales: [...demoChanges.sales],
   };
 }

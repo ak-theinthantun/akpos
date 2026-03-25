@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { authRouter } from './routes/auth';
 import { syncRouter } from './routes/sync';
+import { getPersistenceMode } from './persistence/sales-store';
 
 export function createApp() {
   const app = express();
@@ -13,6 +14,7 @@ export function createApp() {
     res.json({
       ok: true,
       service: 'akpos-server',
+      persistence: getPersistenceMode(),
       timestamp: new Date().toISOString(),
     });
   });

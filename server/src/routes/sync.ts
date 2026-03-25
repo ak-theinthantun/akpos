@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { appendSyncedSale, getDemoChanges } from '../data/demo';
+import { getBaseDemoChanges } from '../data/demo';
+import { listSyncedSales, saveSyncedSale } from '../persistence/sales-store';
 
 const pushItemSchema = z.object({
   queueId: z.string().min(1),
@@ -18,7 +19,7 @@ const pushSchema = z.object({
 
 export const syncRouter = Router();
 
-syncRouter.post('/push', (req, res) => {
+syncRouter.post('/push', async (req, res) => {
   const parsed = pushSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -28,14 +29,14 @@ syncRouter.post('/push', (req, res) => {
     });
   }
 
-  parsed.data.items.forEach((item) => {
+  for (const item of parsed.data.items) {
     if (item.entityType === 'sale' && item.operation === 'sale.create') {
       const sale = item.payload.sale;
-      if (sale && typeof sale === 'object') {
-        appendSyncedSale(sale as Record<string, unknown>);
+      if (sale && typeof sale === 'object' && 'id' in sale && typeof sale.id === 'string') {
+        await saveSyncedSale(sale as typeof sale & { id: string });
       }
     }
-  });
+  }
 
   return res.json({
     acked: parsed.data.items.map(item => ({
@@ -47,11 +48,15 @@ syncRouter.post('/push', (req, res) => {
   });
 });
 
-syncRouter.get('/pull', (req, res) => {
+syncRouter.get('/pull', async (req, res) => {
   const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : null;
+  const syncedSales = await listSyncedSales();
 
   return res.json({
     cursor: cursor ?? `dev-cursor-${Date.now()}`,
-    changes: getDemoChanges(),
+    changes: {
+      ...getBaseDemoChanges(),
+      sales: syncedSales,
+    },
   });
 });
