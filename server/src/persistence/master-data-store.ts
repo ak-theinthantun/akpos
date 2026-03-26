@@ -37,6 +37,52 @@ type ProductRecord = {
 };
 
 let pool: Pool | null = null;
+const memorySettings = new Map<string, SettingRecord>(
+  demoChanges.settings.map(setting => [
+    setting.key,
+    {
+      key: setting.key,
+      value: String(setting.value),
+      updatedAt: setting.updatedAt,
+    },
+  ])
+);
+const memoryCustomers = new Map<string, CustomerRecord>(
+  demoChanges.customers.map(customer => [
+    customer.id,
+    {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone ?? '',
+      type: customer.type ?? 'regular',
+      active: customer.active ?? true,
+      notes: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ])
+);
+const memoryProducts = new Map<string, ProductRecord>(
+  demoChanges.products.map(product => [
+    product.id,
+    {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price ?? 0),
+      wholesalePrice: Number(product.wholesalePrice ?? product.price ?? 0),
+      costPrice: Number(product.costPrice ?? 0),
+      currentStock: Number(product.currentStock ?? 0),
+      active: product.active ?? true,
+      categoryId: null,
+      unitLabel: '',
+      supplierId: null,
+      sku: '',
+      image: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ])
+);
 
 function getPool() {
   const env = getServerEnv({ requireJwtSecret: false });
@@ -159,11 +205,7 @@ async function seedMasterDataIfEmpty() {
 export async function listSettings(): Promise<SettingRecord[]> {
   const db = getPool();
   if (!db) {
-    return demoChanges.settings.map(setting => ({
-      key: setting.key,
-      value: String(setting.value),
-      updatedAt: setting.updatedAt,
-    }));
+    return Array.from(memorySettings.values()).sort((a, b) => a.key.localeCompare(b.key));
   }
 
   await ensureMasterDataSchema();
@@ -184,14 +226,7 @@ export async function listSettings(): Promise<SettingRecord[]> {
 export async function listCustomers(): Promise<CustomerRecord[]> {
   const db = getPool();
   if (!db) {
-    return demoChanges.customers.map(customer => ({
-      id: customer.id,
-      name: customer.name,
-      phone: customer.phone ?? '',
-      type: customer.type ?? 'regular',
-      active: customer.active ?? true,
-      notes: '',
-    }));
+    return Array.from(memoryCustomers.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   await ensureMasterDataSchema();
@@ -222,20 +257,7 @@ export async function listCustomers(): Promise<CustomerRecord[]> {
 export async function listProducts(): Promise<ProductRecord[]> {
   const db = getPool();
   if (!db) {
-    return demoChanges.products.map(product => ({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price ?? 0),
-      wholesalePrice: Number(product.wholesalePrice ?? product.price ?? 0),
-      costPrice: Number(product.costPrice ?? 0),
-      currentStock: Number(product.currentStock ?? 0),
-      active: product.active ?? true,
-      categoryId: null,
-      unitLabel: '',
-      supplierId: null,
-      sku: '',
-      image: '',
-    }));
+    return Array.from(memoryProducts.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   await ensureMasterDataSchema();
@@ -275,3 +297,121 @@ export async function listProducts(): Promise<ProductRecord[]> {
   }));
 }
 
+export async function saveSetting(setting: SettingRecord) {
+  const db = getPool();
+  if (!db) {
+    memorySettings.set(setting.key, setting);
+    return;
+  }
+
+  await ensureMasterDataSchema();
+  await db.query(
+    `INSERT INTO store_settings (key, value, updated_at)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (key) DO UPDATE SET
+       value = EXCLUDED.value,
+       updated_at = EXCLUDED.updated_at`,
+    [setting.key, setting.value, setting.updatedAt]
+  );
+}
+
+export async function saveCustomer(customer: CustomerRecord) {
+  const db = getPool();
+  if (!db) {
+    memoryCustomers.set(customer.id, {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone ?? '',
+      type: customer.type,
+      active: customer.active ?? true,
+      notes: customer.notes ?? '',
+      updatedAt: customer.updatedAt ?? new Date().toISOString(),
+      createdAt: customer.createdAt ?? new Date().toISOString(),
+    });
+    return;
+  }
+
+  await ensureMasterDataSchema();
+  await db.query(
+    `INSERT INTO customers (id, name, phone, type, active, notes, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name,
+       phone = EXCLUDED.phone,
+       type = EXCLUDED.type,
+       active = EXCLUDED.active,
+       notes = EXCLUDED.notes,
+       updated_at = EXCLUDED.updated_at`,
+    [
+      customer.id,
+      customer.name,
+      customer.phone ?? '',
+      customer.type,
+      customer.active ?? true,
+      customer.notes ?? '',
+      customer.createdAt ?? new Date().toISOString(),
+      customer.updatedAt ?? new Date().toISOString(),
+    ]
+  );
+}
+
+export async function saveProduct(product: ProductRecord) {
+  const db = getPool();
+  if (!db) {
+    memoryProducts.set(product.id, {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      wholesalePrice: product.wholesalePrice ?? product.price,
+      costPrice: product.costPrice ?? 0,
+      currentStock: product.currentStock ?? 0,
+      active: product.active ?? true,
+      categoryId: product.categoryId ?? null,
+      unitLabel: product.unitLabel ?? '',
+      supplierId: product.supplierId ?? null,
+      sku: product.sku ?? '',
+      image: product.image ?? '',
+      updatedAt: product.updatedAt ?? new Date().toISOString(),
+      createdAt: product.createdAt ?? new Date().toISOString(),
+    });
+    return;
+  }
+
+  await ensureMasterDataSchema();
+  await db.query(
+    `INSERT INTO products (
+      id, name, price, wholesale_price, cost_price, current_stock, active, category_id, unit_label, supplier_id, sku, image, created_at, updated_at
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      price = EXCLUDED.price,
+      wholesale_price = EXCLUDED.wholesale_price,
+      cost_price = EXCLUDED.cost_price,
+      current_stock = EXCLUDED.current_stock,
+      active = EXCLUDED.active,
+      category_id = EXCLUDED.category_id,
+      unit_label = EXCLUDED.unit_label,
+      supplier_id = EXCLUDED.supplier_id,
+      sku = EXCLUDED.sku,
+      image = EXCLUDED.image,
+      updated_at = EXCLUDED.updated_at`,
+    [
+      product.id,
+      product.name,
+      product.price,
+      product.wholesalePrice ?? product.price,
+      product.costPrice ?? 0,
+      product.currentStock ?? 0,
+      product.active ?? true,
+      product.categoryId ?? null,
+      product.unitLabel ?? '',
+      product.supplierId ?? null,
+      product.sku ?? '',
+      product.image ?? '',
+      product.createdAt ?? new Date().toISOString(),
+      product.updatedAt ?? new Date().toISOString(),
+    ]
+  );
+}

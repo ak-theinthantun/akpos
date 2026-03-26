@@ -29,7 +29,7 @@ export async function runSync(token: string, deviceId: string, cursor: string | 
     }
   }
 
-  const pulled = await pullSync(activeCursor, token);
+  const pulled = await pullSync(activeCursor, token, deviceId);
 
   await productsRepository.saveMany((pulled.changes.products as Array<Record<string, unknown>> | undefined)?.map(product => ({
     id: String(product.id),

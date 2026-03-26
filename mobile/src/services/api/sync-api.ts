@@ -17,8 +17,11 @@ export async function pushSync(payload: PushSyncRequest, token: string) {
   return response.json();
 }
 
-export async function pullSync(cursor: string | null, token: string): Promise<PullSyncResponse> {
-  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+export async function pullSync(cursor: string | null, token: string, deviceId: string): Promise<PullSyncResponse> {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  params.set('deviceId', deviceId);
+  const query = params.toString() ? `?${params.toString()}` : '';
   const response = await apiFetch(`/sync/pull${query}`, {
     method: 'GET',
     headers: {

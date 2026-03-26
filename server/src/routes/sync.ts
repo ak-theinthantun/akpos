@@ -3,8 +3,16 @@ import { z } from 'zod';
 import { getBaseDemoChanges } from '../data/demo';
 import { listSyncedSales, saveSyncedSale } from '../persistence/sales-store';
 import { updateDevicePullCursor } from '../persistence/auth-store';
-import { listCustomers, listProducts, listSettings } from '../persistence/master-data-store';
+import {
+  listCustomers,
+  listProducts,
+  listSettings,
+  saveCustomer,
+  saveProduct,
+  saveSetting,
+} from '../persistence/master-data-store';
 import { asyncHandler } from '../utils/async-handler';
+import { requireAuth } from '../middleware/require-auth';
 
 const pushItemSchema = z.object({
   queueId: z.string().min(1),
@@ -21,6 +29,11 @@ const pushSchema = z.object({
 });
 
 export const syncRouter = Router();
+syncRouter.use(asyncHandler(requireAuth));
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 syncRouter.post('/push', asyncHandler(async (req, res) => {
   const parsed = pushSchema.safeParse(req.body);
@@ -37,6 +50,55 @@ syncRouter.post('/push', asyncHandler(async (req, res) => {
       const sale = item.payload.sale;
       if (sale && typeof sale === 'object' && 'id' in sale && typeof sale.id === 'string') {
         await saveSyncedSale(sale as typeof sale & { id: string });
+      }
+    }
+
+    if (item.entityType === 'setting' && /^setting\.(create|update|upsert)$/.test(item.operation)) {
+      const raw = asRecord(item.payload.setting) ?? item.payload;
+      if ('key' in raw && 'value' in raw) {
+        await saveSetting({
+          key: String(raw.key),
+          value: String(raw.value),
+          updatedAt: String(raw.updatedAt ?? item.createdAt),
+        });
+      }
+    }
+
+    if (item.entityType === 'customer' && /^customer\.(create|update|upsert)$/.test(item.operation)) {
+      const raw = asRecord(item.payload.customer) ?? item.payload;
+      if ('id' in raw && 'name' in raw) {
+        await saveCustomer({
+          id: String(raw.id),
+          name: String(raw.name),
+          phone: String(raw.phone ?? ''),
+          type: String(raw.type ?? 'regular'),
+          active: Boolean(raw.active ?? true),
+          notes: String(raw.notes ?? ''),
+          createdAt: String(raw.createdAt ?? item.createdAt),
+          updatedAt: String(raw.updatedAt ?? item.createdAt),
+        });
+      }
+    }
+
+    if (item.entityType === 'product' && /^product\.(create|update|upsert)$/.test(item.operation)) {
+      const raw = asRecord(item.payload.product) ?? item.payload;
+      if ('id' in raw && 'name' in raw) {
+        await saveProduct({
+          id: String(raw.id),
+          name: String(raw.name),
+          price: Number(raw.price ?? 0),
+          wholesalePrice: Number(raw.wholesalePrice ?? raw.price ?? 0),
+          costPrice: Number(raw.costPrice ?? 0),
+          currentStock: Number(raw.currentStock ?? 0),
+          active: Boolean(raw.active ?? true),
+          categoryId: raw.categoryId ? String(raw.categoryId) : null,
+          unitLabel: String(raw.unitLabel ?? ''),
+          supplierId: raw.supplierId ? String(raw.supplierId) : null,
+          sku: String(raw.sku ?? ''),
+          image: String(raw.image ?? ''),
+          createdAt: String(raw.createdAt ?? item.createdAt),
+          updatedAt: String(raw.updatedAt ?? item.createdAt),
+        });
       }
     }
   }
@@ -62,7 +124,12 @@ syncRouter.get('/pull', asyncHandler(async (req, res) => {
     listProducts(),
   ]);
 
-  await updateDevicePullCursor(typeof req.query.deviceId === 'string' ? req.query.deviceId : '', nextCursor);
+  const requestedDeviceId =
+    typeof req.query.deviceId === 'string' && req.query.deviceId
+      ? req.query.deviceId
+      : String(res.locals.auth?.device?.id ?? '');
+
+  await updateDevicePullCursor(requestedDeviceId, nextCursor);
 
   return res.json({
     cursor: nextCursor,

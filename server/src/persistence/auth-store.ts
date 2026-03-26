@@ -28,6 +28,16 @@ export interface AuthDeviceSessionRecord {
 }
 
 let pool: Pool | null = null;
+const memorySessions = new Map<
+  string,
+  {
+    refreshToken: string;
+    userId: string;
+    userName: string;
+    userRole: string;
+    deviceId: string;
+  }
+>();
 
 function getPool() {
   const env = getServerEnv({ requireJwtSecret: false });
@@ -84,6 +94,14 @@ export async function saveDeviceLogin(input: {
   const refreshToken = `refresh-${randomUUID()}`;
 
   if (!db) {
+    memorySessions.set(token, {
+      refreshToken,
+      userId: input.user.id,
+      userName: input.user.name,
+      userRole: input.user.role,
+      deviceId: input.deviceId,
+    });
+
     return {
       token,
       refreshToken,
@@ -148,6 +166,7 @@ export async function saveDeviceLogin(input: {
 }
 
 export async function updateDevicePullCursor(deviceId: string, cursor: string) {
+  if (!deviceId) return;
   const db = getPool();
   if (!db) return;
 
@@ -161,3 +180,52 @@ export async function updateDevicePullCursor(deviceId: string, cursor: string) {
   );
 }
 
+export async function findSessionByToken(token: string) {
+  const db = getPool();
+  if (!db) {
+    const session = memorySessions.get(token);
+    if (!session) return null;
+    return {
+      token,
+      refreshToken: session.refreshToken,
+      user: {
+        id: session.userId,
+        name: session.userName,
+        role: session.userRole,
+      },
+      device: {
+        id: session.deviceId,
+      },
+    };
+  }
+
+  await ensureAuthSchema();
+
+  const result = await db.query<{
+    token: string;
+    refresh_token: string;
+    user_id: string;
+    device_id: string;
+  }>(
+    `SELECT token, refresh_token, user_id, device_id
+     FROM auth_sessions
+     WHERE token = $1`,
+    [token]
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  return {
+    token: row.token,
+    refreshToken: row.refresh_token,
+    user: {
+      id: row.user_id,
+      name: row.user_id,
+      role: 'unknown',
+    },
+    device: {
+      id: row.device_id,
+    },
+  };
+}
