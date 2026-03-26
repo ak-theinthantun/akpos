@@ -109,6 +109,9 @@ export default function SaleScreen() {
           <Pressable onPress={() => router.replace('/(main)/orders')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Orders</Text>
           </Pressable>
+          <Pressable onPress={() => router.replace('/(main)/reports')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Reports</Text>
+          </Pressable>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 12 }}>
           <Pressable
