@@ -77,6 +77,23 @@ export interface ReportSummaryResponse {
   };
 }
 
+export interface HealthResponse {
+  ok: boolean;
+  service: string;
+  env?: string;
+  persistence?: string;
+  timestamp: string;
+}
+
+export interface ReadyResponse {
+  ok: boolean;
+  service: string;
+  env?: string;
+  persistence?: string;
+  detail?: string;
+  timestamp: string;
+}
+
 export interface SaleCreatePayload {
   sale: Sale;
   saleItems: Sale['items'];

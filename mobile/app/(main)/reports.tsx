@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { getStoredSession } from '@/store/session-store';
 import { fetchReportSummary } from '@/services/api/reports-api';
 import { salesRepository } from '@/db/repositories/sales-repository';
+import { fetchHealth, fetchReady } from '@/services/api/system-api';
 
 function formatCurrency(amount: number) {
   return `${amount.toLocaleString()} Ks`;
@@ -13,6 +14,13 @@ export default function ReportsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [sourceLabel, setSourceLabel] = useState<'server' | 'offline'>('offline');
   const [message, setMessage] = useState('');
+  const [serverStatus, setServerStatus] = useState<{
+    label: string;
+    detail: string;
+  }>({
+    label: 'Offline',
+    detail: 'Server not checked yet.',
+  });
   const [summary, setSummary] = useState({
     totalSales: 0,
     grossSales: 0,
@@ -25,6 +33,19 @@ export default function ReportsScreen() {
     setIsLoading(true);
     setMessage('');
     let fallbackMessage = '';
+
+    try {
+      const [health, ready] = await Promise.all([fetchHealth(), fetchReady()]);
+      setServerStatus({
+        label: ready.ok ? 'Online' : 'Degraded',
+        detail: `${health.service} • ${ready.persistence ?? health.persistence ?? 'unknown persistence'}`,
+      });
+    } catch {
+      setServerStatus({
+        label: 'Offline',
+        detail: 'Backend is unreachable. Using local data when available.',
+      });
+    }
 
     try {
       const session = await getStoredSession();
@@ -92,6 +113,10 @@ export default function ReportsScreen() {
           <Text style={{ fontSize: 12, color: '#6b7280' }}>
             Source: <Text style={{ fontWeight: '700', color: '#171717' }}>{sourceLabel === 'server' ? 'Server' : 'Offline fallback'}</Text>
           </Text>
+          <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>
+            Backend: <Text style={{ fontWeight: '700', color: '#171717' }}>{serverStatus.label}</Text>
+          </Text>
+          <Text style={{ marginTop: 4, fontSize: 11, color: '#6b7280' }}>{serverStatus.detail}</Text>
         </View>
 
         {message ? (
