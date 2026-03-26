@@ -46,6 +46,37 @@ export interface PullSyncResponse {
   changes: Record<string, unknown[]>;
 }
 
+export interface OrderSummaryResponse {
+  orders: Array<{
+    id: string;
+    receiptNo: string | null;
+    date: string | null;
+    time: string | null;
+    customerId: string | null;
+    staffId: string | null;
+    total: number;
+    amountPaid: number;
+    paymentMethod: string;
+    status: string;
+    itemCount: number;
+    paymentCount: number;
+  }>;
+}
+
+export interface OrderDetailResponse {
+  order: Sale;
+}
+
+export interface ReportSummaryResponse {
+  summary: {
+    totalSales: number;
+    grossSales: number;
+    paidSales: number;
+    creditSales: number;
+    outstandingBalance: number;
+  };
+}
+
 export interface SaleCreatePayload {
   sale: Sale;
   saleItems: Sale['items'];

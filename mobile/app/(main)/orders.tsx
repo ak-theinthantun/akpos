@@ -6,6 +6,7 @@ import { syncStateRepository } from '@/db/repositories/sync-state-repository';
 import { syncQueueRepository } from '@/db/repositories/sync-queue-repository';
 import { runSync } from '@/services/sync/sync-engine';
 import { getStoredSession } from '@/store/session-store';
+import { fetchOrders } from '@/services/api/orders-api';
 
 interface OrderItem {
   id: string;
@@ -30,16 +31,40 @@ export default function OrdersScreen() {
   const [syncMessage, setSyncMessage] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastCursor, setLastCursor] = useState<string | null>(null);
+  const [sourceLabel, setSourceLabel] = useState<'local' | 'server'>('local');
 
   async function loadOrders() {
-    const [sales, queue, cursor] = await Promise.all([
-      salesRepository.list(),
+    const session = await getStoredSession();
+    const [queue, cursor] = await Promise.all([
       syncQueueRepository.listAll(),
       syncStateRepository.get('last_pull_cursor'),
     ]);
 
-    setOrders(
-      sales.map((sale) => ({
+    let resolvedOrders: OrderItem[] | null = null;
+
+    if (session.token) {
+      try {
+        const response = await fetchOrders(session.token);
+        resolvedOrders = response.orders.map((order) => ({
+          id: order.id,
+          receiptNo: order.receiptNo ?? order.id,
+          date: order.date ?? '-',
+          time: order.time ?? '-',
+          customerId: order.customerId,
+          total: order.total,
+          status: order.status,
+          paymentMethod: order.paymentMethod === 'debt' ? 'debt' : 'cash',
+          itemCount: order.itemCount,
+        }));
+        setSourceLabel('server');
+      } catch {
+        resolvedOrders = null;
+      }
+    }
+
+    if (!resolvedOrders) {
+      const sales = await salesRepository.list();
+      resolvedOrders = sales.map((sale) => ({
         id: sale.id,
         receiptNo: sale.receiptNo,
         date: sale.date,
@@ -49,8 +74,11 @@ export default function OrdersScreen() {
         status: sale.status,
         paymentMethod: sale.paymentMethod,
         itemCount: sale.items.reduce((sum, item) => sum + item.quantity, 0),
-      }))
-    );
+      }));
+      setSourceLabel('local');
+    }
+
+    setOrders(resolvedOrders);
     setPendingEntityIds(
       queue.filter((item) => item.entityType === 'sale' && item.status !== 'synced').map((item) => item.entityId)
     );
@@ -105,7 +133,9 @@ export default function OrdersScreen() {
     <View style={{ flex: 1, backgroundColor: '#f5f5f4' }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e7e5e4', backgroundColor: '#ffffff' }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#171717' }}>Orders</Text>
-        <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>Local sales saved on device.</Text>
+        <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>
+          {sourceLabel === 'server' ? 'Server-backed orders with offline fallback.' : 'Local sales saved on device.'}
+        </Text>
         <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <Text style={{ flex: 1, fontSize: 11, color: '#6b7280' }}>
             {lastCursor ? `Last sync cursor: ${lastCursor}` : 'No sync cursor yet'}
@@ -142,6 +172,13 @@ export default function OrdersScreen() {
         <View style={{ flex: 1, borderRadius: 12, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', padding: 12 }}>
           <Text style={{ fontSize: 11, color: '#6b7280', fontWeight: '600' }}>Pending Sync</Text>
           <Text style={{ marginTop: 6, fontSize: 18, fontWeight: '700', color: '#d97706' }}>{summary.pending}</Text>
+        </View>
+      </View>
+      <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
+        <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 10 }}>
+          <Text style={{ fontSize: 12, color: '#6b7280' }}>
+            Source: <Text style={{ fontWeight: '700', color: '#171717' }}>{sourceLabel === 'server' ? 'Server' : 'Local offline cache'}</Text>
+          </Text>
         </View>
       </View>
       {syncMessage ? (

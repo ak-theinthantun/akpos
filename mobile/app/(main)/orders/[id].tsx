@@ -3,6 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { salesRepository } from '@/db/repositories/sales-repository';
 import type { Sale } from '@/types/domain';
+import { getStoredSession } from '@/store/session-store';
+import { fetchOrderById } from '@/services/api/orders-api';
 
 function formatCurrency(amount: number) {
   return `${amount.toLocaleString()} Ks`;
@@ -12,22 +14,41 @@ export default function OrderDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const [sale, setSale] = useState<Sale | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sourceLabel, setSourceLabel] = useState<'local' | 'server'>('local');
 
   useEffect(() => {
     let mounted = true;
 
-    if (!params.id || typeof params.id !== 'string') {
+    const orderId = typeof params.id === 'string' ? params.id : undefined;
+
+    if (!orderId) {
       setIsLoading(false);
       return;
     }
 
-    salesRepository.getById(params.id)
-      .then((result) => {
-        if (mounted) setSale(result);
-      })
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
+    (async () => {
+      try {
+        const session = await getStoredSession();
+        if (session.token) {
+          const response = await fetchOrderById(orderId, session.token);
+          if (mounted && response.order) {
+            setSale(response.order);
+            setSourceLabel('server');
+            return;
+          }
+        }
+      } catch {
+        // Fall back to local sale storage below.
+      }
+
+      const result = await salesRepository.getById(orderId);
+      if (mounted) {
+        setSale(result);
+        setSourceLabel('local');
+      }
+    })().finally(() => {
+      if (mounted) setIsLoading(false);
+    });
 
     return () => {
       mounted = false;
@@ -71,6 +92,9 @@ export default function OrderDetailScreen() {
       <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e7e5e4', backgroundColor: '#ffffff' }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#171717' }}>Order Detail</Text>
         <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>{sale.receiptNo}</Text>
+        <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>
+          Source: <Text style={{ fontWeight: '700', color: '#171717' }}>{sourceLabel === 'server' ? 'Server' : 'Local offline cache'}</Text>
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 }}>
