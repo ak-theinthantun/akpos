@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { getBaseDemoChanges } from '../data/demo';
 import { listSyncedSales, saveSyncedSale } from '../persistence/sales-store';
+import { asyncHandler } from '../utils/async-handler';
 
 const pushItemSchema = z.object({
   queueId: z.string().min(1),
@@ -19,7 +20,7 @@ const pushSchema = z.object({
 
 export const syncRouter = Router();
 
-syncRouter.post('/push', async (req, res) => {
+syncRouter.post('/push', asyncHandler(async (req, res) => {
   const parsed = pushSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -46,9 +47,9 @@ syncRouter.post('/push', async (req, res) => {
     })),
     rejected: [],
   });
-});
+}));
 
-syncRouter.get('/pull', async (req, res) => {
+syncRouter.get('/pull', asyncHandler(async (req, res) => {
   const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : null;
   const syncedSales = await listSyncedSales();
 
@@ -59,4 +60,4 @@ syncRouter.get('/pull', async (req, res) => {
       sales: syncedSales,
     },
   });
-});
+}));

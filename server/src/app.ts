@@ -4,6 +4,8 @@ import { authRouter } from './routes/auth';
 import { syncRouter } from './routes/sync';
 import { checkPersistenceReadiness, getPersistenceMode } from './persistence/sales-store';
 import { getServerEnv } from './config/env';
+import { requestLogger } from './middleware/request-logger';
+import { errorHandler } from './middleware/error-handler';
 
 export function createApp() {
   const app = express();
@@ -22,6 +24,7 @@ export function createApp() {
       },
     })
   );
+  app.use(requestLogger);
   app.use(express.json());
 
   app.get('/health', (_req, res) => {
@@ -54,6 +57,7 @@ export function createApp() {
 
   app.use('/auth', authRouter);
   app.use('/sync', syncRouter);
+  app.use(errorHandler);
 
   return app;
 }

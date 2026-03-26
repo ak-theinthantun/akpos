@@ -26,6 +26,7 @@ Important project paths:
 - mobile app: [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile)
 - backend env sample: [`/Users/ethanhtoon/Documents/theo/projects/vopos/server/.env.production.example`](/Users/ethanhtoon/Documents/theo/projects/vopos/server/.env.production.example)
 - mobile env sample: [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env.production.example`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env.production.example)
+- Render blueprint: [`/Users/ethanhtoon/Documents/theo/projects/vopos/render.yaml`](/Users/ethanhtoon/Documents/theo/projects/vopos/render.yaml)
 
 ## 1. Push The Latest Repo
 
@@ -34,6 +35,11 @@ Make sure the latest source is already pushed to GitHub:
 - repo: [https://github.com/ak-theinthantun/akpos](https://github.com/ak-theinthantun/akpos)
 
 Render will deploy from GitHub.
+
+You can either:
+
+- create services manually in the Render dashboard
+- or use the Render Blueprint in [`/Users/ethanhtoon/Documents/theo/projects/vopos/render.yaml`](/Users/ethanhtoon/Documents/theo/projects/vopos/render.yaml)
 
 ## 2. Create Render Postgres
 
@@ -90,6 +96,8 @@ Recommendations:
 - use a long random `JWT_SECRET`
 - use the Render `Internal Database URL`, not the external one, for the backend service
 - keep database and web service in the same region
+
+If you use the Blueprint file, Render can create most of this automatically. You will still need to provide the real `CORS_ORIGIN` value during setup.
 
 ## 5. First Deploy Check
 

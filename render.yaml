@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: akpos-server
+    runtime: node
+    repo: https://github.com/ak-theinthantun/akpos
+    branch: main
+    rootDir: server
+    plan: starter
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: akpos-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+
+databases:
+  - name: akpos-db
+    plan: basic-256mb
+    region: singapore
+    databaseName: akpos
+    user: akpos

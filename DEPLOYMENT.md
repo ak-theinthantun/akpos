@@ -122,6 +122,7 @@ Expected health payload includes:
 Use this exact guide:
 
 - [`/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md`](/Users/ethanhtoon/Documents/theo/projects/vopos/RENDER_SETUP.md)
+- [`/Users/ethanhtoon/Documents/theo/projects/vopos/render.yaml`](/Users/ethanhtoon/Documents/theo/projects/vopos/render.yaml)
 
 ### Generic hosted deployment
 
