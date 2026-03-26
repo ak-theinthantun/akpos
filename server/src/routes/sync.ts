@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getBaseDemoChanges } from '../data/demo';
 import { listSyncedSales, saveSyncedSale } from '../persistence/sales-store';
 import { updateDevicePullCursor } from '../persistence/auth-store';
+import { listCustomers, listProducts, listSettings } from '../persistence/master-data-store';
 import { asyncHandler } from '../utils/async-handler';
 
 const pushItemSchema = z.object({
@@ -54,13 +55,22 @@ syncRouter.get('/pull', asyncHandler(async (req, res) => {
   const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : null;
   const syncedSales = await listSyncedSales();
   const nextCursor = cursor ?? `dev-cursor-${Date.now()}`;
+  const baseChanges = getBaseDemoChanges();
+  const [settings, customers, products] = await Promise.all([
+    listSettings(),
+    listCustomers(),
+    listProducts(),
+  ]);
 
   await updateDevicePullCursor(typeof req.query.deviceId === 'string' ? req.query.deviceId : '', nextCursor);
 
   return res.json({
     cursor: nextCursor,
     changes: {
-      ...getBaseDemoChanges(),
+      ...baseChanges,
+      settings,
+      customers,
+      products,
       sales: syncedSales,
     },
   });

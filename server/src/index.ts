@@ -1,12 +1,14 @@
 import 'dotenv/config';
 import { createApp } from './app';
 import { ensureAuthSchema } from './persistence/auth-store';
+import { ensureMasterDataSchema } from './persistence/master-data-store';
 import { initSalesStore } from './persistence/sales-store';
 import { getServerEnv } from './config/env';
 
 async function main() {
   const env = getServerEnv();
   await ensureAuthSchema();
+  await ensureMasterDataSchema();
   const persistence = await initSalesStore();
   const app = createApp();
 

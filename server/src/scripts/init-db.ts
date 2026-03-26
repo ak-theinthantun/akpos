@@ -1,11 +1,13 @@
 import 'dotenv/config';
 import { ensureAuthSchema } from '../persistence/auth-store';
+import { ensureMasterDataSchema } from '../persistence/master-data-store';
 import { ensureSalesSchema, getPersistenceMode } from '../persistence/sales-store';
 import { getServerEnv } from '../config/env';
 
 async function main() {
   const env = getServerEnv({ requireJwtSecret: false });
   await ensureAuthSchema();
+  await ensureMasterDataSchema();
   const result = await ensureSalesSchema();
 
   console.log(`AKPOS environment: ${env.nodeEnv}`);
