@@ -279,6 +279,117 @@ export async function listSyncedSales(): Promise<SyncedSaleRecord[]> {
   }));
 }
 
+export async function getSyncedSaleById(id: string): Promise<SyncedSaleRecord | null> {
+  const sales = await listSyncedSales();
+  return sales.find((sale) => sale.id === id) ?? null;
+}
+
+export async function listSaleSummaries(): Promise<
+  Array<{
+    id: string;
+    receiptNo: string | null;
+    date: string | null;
+    time: string | null;
+    customerId: string | null;
+    staffId: string | null;
+    total: number;
+    amountPaid: number;
+    paymentMethod: string;
+    status: string;
+    itemCount: number;
+    paymentCount: number;
+  }>
+> {
+  const db = getPool();
+  if (!db) {
+    return memorySales.map((sale) => ({
+      id: sale.id,
+      receiptNo: sale.receiptNo ?? null,
+      date: sale.date ?? null,
+      time: sale.time ?? null,
+      customerId: sale.customerId ?? null,
+      staffId: sale.staffId ?? null,
+      total: Number(sale.total ?? 0),
+      amountPaid: Number(sale.amountPaid ?? 0),
+      paymentMethod: String(sale.paymentMethod ?? 'cash'),
+      status: String(sale.status ?? 'completed'),
+      itemCount: memorySaleItems.get(sale.id)?.length ?? sale.items?.length ?? 0,
+      paymentCount: memorySalePayments.get(sale.id)?.length ?? sale.paymentHistory?.length ?? 0,
+    }));
+  }
+
+  await ensureSalesSchema();
+
+  const result = await db.query<{
+    id: string;
+    receipt_no: string | null;
+    sale_date: string | null;
+    sale_time: string | null;
+    customer_id: string | null;
+    staff_id: string | null;
+    total: string;
+    amount_paid: string;
+    payment_method: string;
+    status: string;
+    item_count: string;
+    payment_count: string;
+  }>(
+    `SELECT
+      s.id,
+      s.receipt_no,
+      s.sale_date,
+      s.sale_time,
+      s.customer_id,
+      s.staff_id,
+      s.total,
+      s.amount_paid,
+      s.payment_method,
+      s.status,
+      COUNT(DISTINCT si.id)::text AS item_count,
+      COUNT(DISTINCT sp.id)::text AS payment_count
+     FROM sales s
+     LEFT JOIN sale_items si ON si.sale_id = s.id
+     LEFT JOIN sale_payments sp ON sp.sale_id = s.id
+     GROUP BY s.id
+     ORDER BY s.synced_at DESC`
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    receiptNo: row.receipt_no,
+    date: row.sale_date,
+    time: row.sale_time,
+    customerId: row.customer_id,
+    staffId: row.staff_id,
+    total: Number(row.total),
+    amountPaid: Number(row.amount_paid),
+    paymentMethod: row.payment_method,
+    status: row.status,
+    itemCount: Number(row.item_count),
+    paymentCount: Number(row.payment_count),
+  }));
+}
+
+export async function getSalesSummary() {
+  const summaries = await listSaleSummaries();
+  const totalSales = summaries.length;
+  const grossSales = summaries.reduce((sum, sale) => sum + sale.total, 0);
+  const paidSales = summaries.filter((sale) => sale.paymentMethod === 'cash' || sale.amountPaid >= sale.total).length;
+  const creditSales = summaries.filter((sale) => sale.paymentMethod === 'debt' || sale.amountPaid < sale.total).length;
+  const outstandingBalance = summaries.reduce(
+    (sum, sale) => sum + Math.max(0, sale.total - sale.amountPaid),
+    0
+  );
+
+  return {
+    totalSales,
+    grossSales,
+    paidSales,
+    creditSales,
+    outstandingBalance,
+  };
+}
+
 export function getPersistenceMode() {
   return getPool() ? 'postgres' : 'memory';
 }

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { authRouter } from './routes/auth';
 import { syncRouter } from './routes/sync';
+import { ordersRouter } from './routes/orders';
+import { reportsRouter } from './routes/reports';
 import { checkPersistenceReadiness, getPersistenceMode } from './persistence/sales-store';
 import { getServerEnv } from './config/env';
 import { requestLogger } from './middleware/request-logger';
@@ -57,6 +59,8 @@ export function createApp() {
 
   app.use('/auth', authRouter);
   app.use('/sync', syncRouter);
+  app.use('/orders', ordersRouter);
+  app.use('/reports', reportsRouter);
   app.use(errorHandler);
 
   return app;
