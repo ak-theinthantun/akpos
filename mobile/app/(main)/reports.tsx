@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { getStoredSession } from '@/store/session-store';
 import { fetchReportSummary } from '@/services/api/reports-api';
+import { salesRepository } from '@/db/repositories/sales-repository';
 
 function formatCurrency(amount: number) {
   return `${amount.toLocaleString()} Ks`;
@@ -23,6 +24,7 @@ export default function ReportsScreen() {
   async function loadReport() {
     setIsLoading(true);
     setMessage('');
+    let fallbackMessage = '';
 
     try {
       const session = await getStoredSession();
@@ -35,9 +37,27 @@ export default function ReportsScreen() {
       const response = await fetchReportSummary(session.token);
       setSummary(response.summary);
       setSourceLabel('server');
+      return;
     } catch (error) {
+      fallbackMessage = error instanceof Error ? error.message : 'Failed to load server report.';
+    }
+
+    try {
+      const sales = await salesRepository.list();
+      setSummary({
+        totalSales: sales.length,
+        grossSales: sales.reduce((sum, sale) => sum + sale.total, 0),
+        paidSales: sales.filter((sale) => sale.paymentMethod === 'cash' || sale.amountPaid >= sale.total).length,
+        creditSales: sales.filter((sale) => sale.paymentMethod === 'debt' || sale.amountPaid < sale.total).length,
+        outstandingBalance: sales.reduce((sum, sale) => sum + Math.max(0, sale.total - sale.amountPaid), 0),
+      });
       setSourceLabel('offline');
-      setMessage(error instanceof Error ? error.message : 'Failed to load server report.');
+      setMessage(fallbackMessage || 'Showing local report summary from offline sales.');
+    } catch {
+      setSourceLabel('offline');
+      if (fallbackMessage) {
+        setMessage(fallbackMessage);
+      }
     } finally {
       setIsLoading(false);
     }
