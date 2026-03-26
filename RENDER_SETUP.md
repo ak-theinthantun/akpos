@@ -96,6 +96,7 @@ Recommendations:
 After deploy finishes, open:
 
 - `https://your-render-service.onrender.com/health`
+- `https://your-render-service.onrender.com/ready`
 
 Expected response should include:
 
@@ -113,7 +114,22 @@ If `persistence` is `memory`, check:
 - the URL is the Render Postgres internal URL
 - the web service and database are both running
 
-## 6. Test API Endpoints
+If `/ready` returns `503`, check:
+
+- `NODE_ENV=production`
+- `DATABASE_URL` is set correctly
+- the database is reachable from Render
+
+## 6. Optional Database Init Command
+
+If you open a Render shell or run the app locally against production config, you can initialize the schema with:
+
+```bash
+cd /Users/ethanhtoon/Documents/theo/projects/vopos/server
+npm run db:init
+```
+
+## 7. Test API Endpoints
 
 After `/health` is correct, test:
 
@@ -127,7 +143,7 @@ Local example with your deployed URL:
 curl https://your-render-service.onrender.com/health
 ```
 
-## 7. Configure Mobile Production Env
+## 8. Configure Mobile Production Env
 
 Once the backend is live, copy:
 
@@ -149,7 +165,7 @@ The Expo config reads these values from:
 
 - [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.config.ts`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/app.config.ts)
 
-## 8. Build The First APK
+## 9. Build The First APK
 
 After the backend URL is set in mobile env:
 
@@ -167,19 +183,20 @@ The EAS profile config is in:
 
 - [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/eas.json`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/eas.json)
 
-## 9. Recommended Production Order
+## 10. Recommended Production Order
 
 1. Create Render Postgres
 2. Create Render web service for [`/Users/ethanhtoon/Documents/theo/projects/vopos/server`](/Users/ethanhtoon/Documents/theo/projects/vopos/server)
 3. Add `PORT`, `DATABASE_URL`, and `JWT_SECRET`
-4. Deploy and confirm `/health` shows `persistence: postgres`
-5. Put the Render URL into [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env)
-6. Run `npx eas init`
-7. Build preview APK
-8. Test on one admin device first
-9. Test on one staff device second
+4. Deploy and confirm `/health` and `/ready`
+5. Run `npm run db:init` if you want an explicit schema init check
+6. Put the Render URL into [`/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env`](/Users/ethanhtoon/Documents/theo/projects/vopos/mobile/.env)
+7. Run `npx eas init`
+8. Build preview APK
+9. Test on one admin device first
+10. Test on one staff device second
 
-## 10. Later Improvements
+## 11. Later Improvements
 
 After the first stable deploy, good next production steps are:
 

@@ -98,13 +98,27 @@ If not, it falls back to memory mode for development.
 npm run build
 ```
 
-## 8. Production Start
+## 8. Initialize Database Schema
+
+Before or after the first production deploy, run:
+
+```bash
+npm run db:init
+```
+
+This will:
+
+- create the `synced_sales` table if needed
+- confirm the configured database is reachable
+- skip safely in memory-only development mode
+
+## 9. Production Start
 
 ```bash
 npm run start
 ```
 
-## 9. Recommended Hosting Config
+## 10. Recommended Hosting Config
 
 Recommended production provider:
 
@@ -134,11 +148,12 @@ npm run start
 - `JWT_SECRET`
 - `CORS_ORIGIN`
 
-## 10. Recommended First Production Check
+## 11. Recommended First Production Check
 
 After deploy:
 
 1. open `/health`
+2. open `/ready`
 2. confirm `ok: true`
 3. confirm `persistence: postgres`
 4. test `POST /auth/login`

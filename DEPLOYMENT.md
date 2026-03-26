@@ -102,6 +102,7 @@ npm run dev
 Check:
 
 - [http://localhost:4000/health](http://localhost:4000/health)
+- [http://localhost:4000/ready](http://localhost:4000/ready)
 
 Expected health payload includes:
 
@@ -160,6 +161,11 @@ Example:
 ```text
 https://api.akpos.example.com
 ```
+
+You should verify both:
+
+- `/health` for liveness
+- `/ready` for database readiness
 
 ## Step 5: Configure Mobile Environment
 

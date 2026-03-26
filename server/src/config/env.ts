@@ -5,17 +5,8 @@ const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().min(1).max(65535).default(4000),
     DATABASE_URL: z.string().trim().optional(),
-    JWT_SECRET: z.string().trim().min(1, 'JWT_SECRET is required'),
+    JWT_SECRET: z.string().trim().optional(),
     CORS_ORIGIN: z.string().trim().optional(),
-  })
-  .superRefine((env, ctx) => {
-    if (env.NODE_ENV === 'production' && !env.DATABASE_URL) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['DATABASE_URL'],
-        message: 'DATABASE_URL is required in production',
-      });
-    }
   });
 
 export type ServerEnv = {
@@ -35,9 +26,12 @@ function parseCorsOrigins(value?: string) {
 }
 
 let cachedEnv: ServerEnv | null = null;
+let cachedEnvKey = '';
 
-export function getServerEnv(): ServerEnv {
-  if (cachedEnv) return cachedEnv;
+export function getServerEnv(options?: { requireJwtSecret?: boolean }): ServerEnv {
+  const requireJwtSecret = options?.requireJwtSecret ?? true;
+  const cacheKey = JSON.stringify({ requireJwtSecret });
+  if (cachedEnv && cachedEnvKey === cacheKey) return cachedEnv;
 
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
@@ -45,14 +39,22 @@ export function getServerEnv(): ServerEnv {
     throw new Error(`Invalid server environment: ${message}`);
   }
 
+  if (parsed.data.NODE_ENV === 'production' && !parsed.data.DATABASE_URL) {
+    throw new Error('Invalid server environment: DATABASE_URL is required in production');
+  }
+
+  if (requireJwtSecret && !parsed.data.JWT_SECRET) {
+    throw new Error('Invalid server environment: JWT_SECRET is required');
+  }
+
   cachedEnv = {
     nodeEnv: parsed.data.NODE_ENV,
     port: parsed.data.PORT,
     databaseUrl: parsed.data.DATABASE_URL,
-    jwtSecret: parsed.data.JWT_SECRET,
+    jwtSecret: parsed.data.JWT_SECRET ?? '',
     corsOrigins: parseCorsOrigins(parsed.data.CORS_ORIGIN),
   };
+  cachedEnvKey = cacheKey;
 
   return cachedEnv;
 }
-
