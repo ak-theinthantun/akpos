@@ -43,7 +43,7 @@ export function getServerEnv(options?: { requireJwtSecret?: boolean }): ServerEn
     throw new Error('Invalid server environment: DATABASE_URL is required in production');
   }
 
-  if (requireJwtSecret && !parsed.data.JWT_SECRET) {
+  if (requireJwtSecret && parsed.data.NODE_ENV === 'production' && !parsed.data.JWT_SECRET) {
     throw new Error('Invalid server environment: JWT_SECRET is required');
   }
 
@@ -51,7 +51,7 @@ export function getServerEnv(options?: { requireJwtSecret?: boolean }): ServerEn
     nodeEnv: parsed.data.NODE_ENV,
     port: parsed.data.PORT,
     databaseUrl: parsed.data.DATABASE_URL,
-    jwtSecret: parsed.data.JWT_SECRET ?? '',
+    jwtSecret: parsed.data.JWT_SECRET ?? 'dev-secret',
     corsOrigins: parseCorsOrigins(parsed.data.CORS_ORIGIN),
   };
   cachedEnvKey = cacheKey;

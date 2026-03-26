@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { demoUsers } from '../data/demo';
+import { asyncHandler } from '../utils/async-handler';
+import { saveDeviceLogin } from '../persistence/auth-store';
 
 const loginSchema = z.object({
   username: z.string().min(1),
@@ -13,7 +15,7 @@ const loginSchema = z.object({
 
 export const authRouter = Router();
 
-authRouter.post('/login', (req, res) => {
+authRouter.post('/login', asyncHandler(async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -34,21 +36,25 @@ authRouter.post('/login', (req, res) => {
     });
   }
 
+  const session = await saveDeviceLogin({
+    user,
+    deviceId: parsed.data.deviceId,
+    deviceName: parsed.data.deviceName,
+    platform: parsed.data.platform,
+    appVersion: parsed.data.appVersion,
+  });
+
   return res.json({
-    token: `dev-token-${user.id}`,
-    refreshToken: `dev-refresh-${user.id}`,
-    user: {
-      id: user.id,
-      name: user.name,
-      role: user.role,
-    },
+    token: session.token,
+    refreshToken: session.refreshToken,
+    user: session.user,
     shop: {
       id: 'shop_1',
       name: 'AKPOS',
     },
     device: {
-      id: parsed.data.deviceId,
-      lastPullCursor: null,
+      id: session.device.id,
+      lastPullCursor: session.device.lastPullCursor,
     },
   });
-});
+}));

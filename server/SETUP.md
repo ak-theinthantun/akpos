@@ -108,6 +108,7 @@ npm run db:init
 
 This will:
 
+- create the auth device/session tables if needed
 - create the `synced_sales` table if needed
 - confirm the configured database is reachable
 - skip safely in memory-only development mode
