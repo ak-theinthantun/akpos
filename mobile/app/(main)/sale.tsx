@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { productsRepository } from '@/db/repositories/products-repository';
 import { customersRepository } from '@/db/repositories/customers-repository';
 import { setCartDraft } from '@/store/cart-draft-store';
+import { AppSectionNav } from '@/components/app-section-nav';
 
 interface MobileProduct {
   id: string;
@@ -102,20 +103,7 @@ export default function SaleScreen() {
       <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e7e5e4', backgroundColor: '#ffffff' }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#171717' }}>AKPOS Sale</Text>
         <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>Offline SQLite-backed sale screen foundation.</Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-          <View style={{ borderRadius: 999, backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#16a34a', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#166534' }}>Sale</Text>
-          </View>
-          <Pressable onPress={() => router.replace('/(main)/orders')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Orders</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/(main)/reports')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Reports</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/(main)/settings')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Settings</Text>
-          </Pressable>
-        </View>
+        <AppSectionNav current="sale" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 12 }}>
           <Pressable
             onPress={() => setSelectedCustomerId('')}

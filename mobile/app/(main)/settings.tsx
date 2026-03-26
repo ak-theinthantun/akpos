@@ -5,6 +5,7 @@ import { getStoredSession } from '@/store/session-store';
 import { syncStateRepository } from '@/db/repositories/sync-state-repository';
 import { fetchHealth, fetchReady } from '@/services/api/system-api';
 import { API_BASE_URL } from '@/services/api/client';
+import { AppSectionNav } from '@/components/app-section-nav';
 
 export default function SettingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -62,20 +63,7 @@ export default function SettingsScreen() {
       <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e7e5e4', backgroundColor: '#ffffff' }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#171717' }}>Settings</Text>
         <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>Deployment and device status.</Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <Pressable onPress={() => router.replace('/(main)/sale')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Sale</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/(main)/orders')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Orders</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/(main)/reports')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Reports</Text>
-          </Pressable>
-          <View style={{ borderRadius: 999, backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#16a34a', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#166534' }}>Settings</Text>
-          </View>
-        </View>
+        <AppSectionNav current="settings" />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 }}>

@@ -7,6 +7,7 @@ import { syncQueueRepository } from '@/db/repositories/sync-queue-repository';
 import { runSync } from '@/services/sync/sync-engine';
 import { getStoredSession } from '@/store/session-store';
 import { fetchOrders } from '@/services/api/orders-api';
+import { AppSectionNav } from '@/components/app-section-nav';
 
 interface OrderItem {
   id: string;
@@ -154,20 +155,7 @@ export default function OrdersScreen() {
             <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>{isSyncing ? 'Syncing...' : 'Sync Now'}</Text>
           </Pressable>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-          <Pressable onPress={() => router.replace('/(main)/sale')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Sale</Text>
-          </Pressable>
-          <View style={{ borderRadius: 999, backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#16a34a', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#166534' }}>Orders</Text>
-          </View>
-          <Pressable onPress={() => router.replace('/(main)/reports')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Reports</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/(main)/settings')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Settings</Text>
-          </Pressable>
-        </View>
+        <AppSectionNav current="orders" />
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>

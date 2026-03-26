@@ -5,6 +5,7 @@ import { getStoredSession } from '@/store/session-store';
 import { fetchReportSummary } from '@/services/api/reports-api';
 import { salesRepository } from '@/db/repositories/sales-repository';
 import { fetchHealth, fetchReady } from '@/services/api/system-api';
+import { AppSectionNav } from '@/components/app-section-nav';
 
 function formatCurrency(amount: number) {
   return `${amount.toLocaleString()} Ks`;
@@ -95,20 +96,7 @@ export default function ReportsScreen() {
         <Text style={{ marginTop: 4, fontSize: 13, color: '#6b7280' }}>
           {sourceLabel === 'server' ? 'Live server-backed summary.' : 'Offline fallback mode.'}
         </Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-          <Pressable onPress={() => router.replace('/(main)/sale')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Sale</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/(main)/orders')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Orders</Text>
-          </Pressable>
-          <View style={{ borderRadius: 999, backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#16a34a', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#166534' }}>Reports</Text>
-          </View>
-          <Pressable onPress={() => router.replace('/(main)/settings')} style={{ borderRadius: 999, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d6d3d1', paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#171717' }}>Settings</Text>
-          </Pressable>
-        </View>
+        <AppSectionNav current="reports" />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 }}>
