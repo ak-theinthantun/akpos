@@ -19,6 +19,7 @@ interface OrderItem {
   status: string;
   paymentMethod: 'cash' | 'debt';
   itemCount: number;
+  source: 'server' | 'local';
 }
 
 function formatCurrency(amount: number) {
@@ -56,6 +57,7 @@ export default function OrdersScreen() {
           status: order.status,
           paymentMethod: order.paymentMethod === 'debt' ? 'debt' : 'cash',
           itemCount: order.itemCount,
+          source: 'server' as const,
         }));
         setSourceLabel('server');
       } catch {
@@ -75,6 +77,7 @@ export default function OrdersScreen() {
         status: sale.status,
         paymentMethod: sale.paymentMethod,
         itemCount: sale.items.reduce((sum, item) => sum + item.quantity, 0),
+        source: 'local' as const,
       }));
       setSourceLabel('local');
     }
@@ -188,8 +191,14 @@ export default function OrdersScreen() {
           <Text style={{ color: '#6b7280' }}>Loading orders...</Text>
         ) : orders.length === 0 ? (
           <View style={{ borderRadius: 14, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', padding: 18 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#171717' }}>No local orders yet</Text>
-            <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>Complete a sale from the Sale screen to see it here.</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#171717' }}>
+              {sourceLabel === 'server' ? 'No server orders yet' : 'No local orders yet'}
+            </Text>
+            <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>
+              {sourceLabel === 'server'
+                ? 'The server is reachable, but no synced orders are available yet.'
+                : 'Complete a sale from the Sale screen to see it here.'}
+            </Text>
           </View>
         ) : (
           orders.map((order) => {
@@ -205,6 +214,9 @@ export default function OrdersScreen() {
                     <Text style={{ fontSize: 15, fontWeight: '700', color: '#171717' }}>{order.receiptNo}</Text>
                     <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>{order.date} • {order.time}</Text>
                     <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>{order.itemCount} items • {order.paymentMethod}</Text>
+                    <Text style={{ marginTop: 4, fontSize: 11, color: '#6b7280' }}>
+                      {order.source === 'server' ? 'Server order' : 'Local offline order'}
+                    </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={{ fontSize: 15, fontWeight: '700', color: '#16a34a' }}>{formatCurrency(order.total)}</Text>
