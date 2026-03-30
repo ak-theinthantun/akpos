@@ -47,6 +47,11 @@ const seedCustomers = [
   { id: 'cust2', name: 'Ma Hnin', phone: '09-234-567', type: 'wholesale', active: 1, notes: 'Wholesale buyer' },
 ];
 
+const seedSuppliers = [
+  { id: 'sup1', name: 'Golden Distribution', phone: '09-777-111', active: 1, notes: 'Snack supplier' },
+  { id: 'sup2', name: 'City Beverage Trading', phone: '09-888-222', active: 1, notes: 'Beverage supplier' },
+];
+
 export async function bootstrapDemoData(db: SQLiteDatabase) {
   const productCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM products');
   if ((productCount?.count ?? 0) === 0) {
@@ -84,6 +89,24 @@ export async function bootstrapDemoData(db: SQLiteDatabase) {
         customer.type,
         customer.active,
         customer.notes,
+        today,
+        nowIso
+      );
+    }
+  }
+
+  const supplierCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM suppliers');
+  if ((supplierCount?.count ?? 0) === 0) {
+    for (const supplier of seedSuppliers) {
+      await db.runAsync(
+        `INSERT INTO suppliers (
+          id, name, phone, active, notes, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        supplier.id,
+        supplier.name,
+        supplier.phone,
+        supplier.active,
+        supplier.notes,
         today,
         nowIso
       );

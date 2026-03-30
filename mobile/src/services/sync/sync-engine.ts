@@ -1,5 +1,6 @@
 import { customersRepository } from '@/db/repositories/customers-repository';
 import { productsRepository } from '@/db/repositories/products-repository';
+import { suppliersRepository } from '@/db/repositories/suppliers-repository';
 import { syncStateRepository } from '@/db/repositories/sync-state-repository';
 import { syncQueueRepository } from '@/db/repositories/sync-queue-repository';
 import { pullSync, pushSync } from '../api/sync-api';
@@ -47,6 +48,14 @@ export async function runSync(token: string, deviceId: string, cursor: string | 
     phone: String(customer.phone ?? ''),
     type: (customer.type === 'wholesale' ? 'wholesale' : 'regular') as 'regular' | 'wholesale',
     active: Boolean(customer.active ?? true),
+  })) ?? []);
+
+  await suppliersRepository.saveMany((pulled.changes.suppliers as Array<Record<string, unknown>> | undefined)?.map(supplier => ({
+    id: String(supplier.id),
+    name: String(supplier.name),
+    phone: String(supplier.phone ?? ''),
+    active: Boolean(supplier.active ?? true),
+    notes: String(supplier.notes ?? ''),
   })) ?? []);
 
   await syncStateRepository.set('last_pull_cursor', pulled.cursor);

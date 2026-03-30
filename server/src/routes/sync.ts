@@ -7,9 +7,11 @@ import {
   listCustomers,
   listProducts,
   listSettings,
+  listSuppliers,
   saveCustomer,
   saveProduct,
   saveSetting,
+  saveSupplier,
 } from '../persistence/master-data-store';
 import { asyncHandler } from '../utils/async-handler';
 import { requireAuth } from '../middleware/require-auth';
@@ -101,6 +103,21 @@ syncRouter.post('/push', asyncHandler(async (req, res) => {
         });
       }
     }
+
+    if (item.entityType === 'supplier' && /^supplier\.(create|update|upsert)$/.test(item.operation)) {
+      const raw = asRecord(item.payload.supplier) ?? item.payload;
+      if ('id' in raw && 'name' in raw) {
+        await saveSupplier({
+          id: String(raw.id),
+          name: String(raw.name),
+          phone: String(raw.phone ?? ''),
+          active: Boolean(raw.active ?? true),
+          notes: String(raw.notes ?? ''),
+          createdAt: String(raw.createdAt ?? item.createdAt),
+          updatedAt: String(raw.updatedAt ?? item.createdAt),
+        });
+      }
+    }
   }
 
   return res.json({
@@ -118,10 +135,11 @@ syncRouter.get('/pull', asyncHandler(async (req, res) => {
   const syncedSales = await listSyncedSales();
   const nextCursor = cursor ?? `dev-cursor-${Date.now()}`;
   const baseChanges = getBaseDemoChanges();
-  const [settings, customers, products] = await Promise.all([
+  const [settings, customers, products, suppliers] = await Promise.all([
     listSettings(),
     listCustomers(),
     listProducts(),
+    listSuppliers(),
   ]);
 
   const requestedDeviceId =
@@ -138,6 +156,7 @@ syncRouter.get('/pull', asyncHandler(async (req, res) => {
       settings,
       customers,
       products,
+      suppliers,
       sales: syncedSales,
     },
   });

@@ -19,6 +19,16 @@ type CustomerRecord = {
   updatedAt?: string;
 };
 
+type SupplierRecord = {
+  id: string;
+  name: string;
+  phone?: string;
+  active?: boolean;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 type ProductRecord = {
   id: string;
   name: string;
@@ -83,6 +93,20 @@ const memoryProducts = new Map<string, ProductRecord>(
     },
   ])
 );
+const memorySuppliers = new Map<string, SupplierRecord>(
+  demoChanges.suppliers.map(supplier => [
+    supplier.id,
+    {
+      id: supplier.id,
+      name: supplier.name,
+      phone: supplier.phone ?? '',
+      active: supplier.active ?? true,
+      notes: supplier.notes ?? '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ])
+);
 
 function getPool() {
   const env = getServerEnv({ requireJwtSecret: false });
@@ -136,6 +160,18 @@ export async function ensureMasterDataSchema() {
       supplier_id TEXT,
       sku TEXT NOT NULL DEFAULT '',
       image TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS suppliers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL DEFAULT '',
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      notes TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
@@ -196,6 +232,23 @@ async function seedMasterDataIfEmpty() {
           Number(product.costPrice ?? 0),
           Number(product.currentStock ?? 0),
           product.active ?? true,
+        ]
+      );
+    }
+  }
+
+  const suppliersCount = await db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM suppliers');
+  if (Number(suppliersCount.rows[0]?.count ?? 0) === 0) {
+    for (const supplier of demoChanges.suppliers) {
+      await db.query(
+        `INSERT INTO suppliers (id, name, phone, active, notes, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+        [
+          supplier.id,
+          supplier.name,
+          supplier.phone ?? '',
+          supplier.active ?? true,
+          supplier.notes ?? '',
         ]
       );
     }
@@ -292,6 +345,35 @@ export async function listProducts(): Promise<ProductRecord[]> {
     supplierId: row.supplier_id,
     sku: row.sku,
     image: row.image,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+}
+
+export async function listSuppliers(): Promise<SupplierRecord[]> {
+  const db = getPool();
+  if (!db) {
+    return Array.from(memorySuppliers.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  await ensureMasterDataSchema();
+
+  const result = await db.query<{
+    id: string;
+    name: string;
+    phone: string;
+    active: boolean;
+    notes: string;
+    created_at: Date;
+    updated_at: Date;
+  }>('SELECT * FROM suppliers ORDER BY name ASC');
+
+  return result.rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    active: row.active,
+    notes: row.notes,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   }));
@@ -412,6 +494,43 @@ export async function saveProduct(product: ProductRecord) {
       product.image ?? '',
       product.createdAt ?? new Date().toISOString(),
       product.updatedAt ?? new Date().toISOString(),
+    ]
+  );
+}
+
+export async function saveSupplier(supplier: SupplierRecord) {
+  const db = getPool();
+  if (!db) {
+    memorySuppliers.set(supplier.id, {
+      id: supplier.id,
+      name: supplier.name,
+      phone: supplier.phone ?? '',
+      active: supplier.active ?? true,
+      notes: supplier.notes ?? '',
+      updatedAt: supplier.updatedAt ?? new Date().toISOString(),
+      createdAt: supplier.createdAt ?? new Date().toISOString(),
+    });
+    return;
+  }
+
+  await ensureMasterDataSchema();
+  await db.query(
+    `INSERT INTO suppliers (id, name, phone, active, notes, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name,
+       phone = EXCLUDED.phone,
+       active = EXCLUDED.active,
+       notes = EXCLUDED.notes,
+       updated_at = EXCLUDED.updated_at`,
+    [
+      supplier.id,
+      supplier.name,
+      supplier.phone ?? '',
+      supplier.active ?? true,
+      supplier.notes ?? '',
+      supplier.createdAt ?? new Date().toISOString(),
+      supplier.updatedAt ?? new Date().toISOString(),
     ]
   );
 }

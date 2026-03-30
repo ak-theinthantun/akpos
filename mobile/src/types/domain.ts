@@ -19,6 +19,15 @@ export interface Customer {
   createdAt: string;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  active: boolean;
+  notes: string;
+  createdAt: string;
+}
+
 export interface SalePaymentRecord {
   id: string;
   date: string;

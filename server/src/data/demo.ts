@@ -26,7 +26,10 @@ export const demoChanges = {
     { id: 'cust1', name: 'Ko Aung', phone: '09-123-456', type: 'regular', active: true },
     { id: 'cust2', name: 'Ma Hnin', phone: '09-234-567', type: 'wholesale', active: true },
   ],
-  suppliers: [],
+  suppliers: [
+    { id: 'sup1', name: 'Golden Distribution', phone: '09-777-111', active: true, notes: 'Snack supplier' },
+    { id: 'sup2', name: 'City Beverage Trading', phone: '09-888-222', active: true, notes: 'Beverage supplier' },
+  ],
   products: [
     { id: 'p1', name: 'Coca Cola 330ml', price: 500, wholesalePrice: 450, costPrice: 350, currentStock: 120, active: true },
     { id: 'p4', name: 'Lays Chips', price: 600, wholesalePrice: 540, costPrice: 420, currentStock: 60, active: true },

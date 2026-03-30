@@ -1,12 +1,13 @@
 import { View, Text, Pressable } from 'react-native';
 import { router } from 'expo-router';
 
-type SectionKey = 'sale' | 'products' | 'customers' | 'orders' | 'reports' | 'settings';
+type SectionKey = 'sale' | 'products' | 'customers' | 'suppliers' | 'orders' | 'reports' | 'settings';
 
 const sections: Array<{ key: SectionKey; label: string; href: string }> = [
   { key: 'sale', label: 'Sale', href: '/(main)/sale' },
   { key: 'products', label: 'Products', href: '/(main)/products' },
   { key: 'customers', label: 'Customers', href: '/(main)/customers' },
+  { key: 'suppliers', label: 'Suppliers', href: '/(main)/suppliers' },
   { key: 'orders', label: 'Orders', href: '/(main)/orders' },
   { key: 'reports', label: 'Reports', href: '/(main)/reports' },
   { key: 'settings', label: 'Settings', href: '/(main)/settings' },
