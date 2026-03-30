@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePOS } from '@/lib/pos-context';
 import { formatCurrency, generateId, Product, Sale } from '@/lib/pos-store';
-import { Check, Lock, Printer, Search, TicketPercent } from 'lucide-react';
+import { Check, ImagePlus, Lock, Printer, Search, TicketPercent } from 'lucide-react';
 
 export function CouponsScreen() {
   const { state, dispatch } = usePOS();
@@ -111,33 +111,17 @@ export function CouponsScreen() {
           <title>${coupon.code}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; color: #111; background: #f5f5f5; }
-            .ticket { max-width: 360px; margin: 0 auto; background: #fff; border: 1px dashed #999; padding: 16px; }
-            .center { text-align: center; }
-            .brand { font-size: 18px; font-weight: 700; }
-            .code { margin-top: 12px; font-size: 22px; font-weight: 700; letter-spacing: 0.18em; }
-            .amount { margin-top: 10px; font-size: 18px; font-weight: 700; color: #166534; }
-            .divider { border-top: 1px dashed #bbb; margin: 14px 0; }
-            .row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin: 6px 0; }
-            .label { color: #666; }
-            .status { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: ${coupon.used ? '#f5f5f5' : '#dcfce7'}; color: ${coupon.used ? '#666' : '#166534'}; }
           </style>
         </head>
         <body>
-          <div class="ticket">
-            <div class="center">
-              <div class="brand">AKPOS Coupon</div>
-              <div class="code">${coupon.code}</div>
-              <div class="amount">${formatCurrency(coupon.amount, state.settings.currencySymbol)}</div>
-              <div class="status">${coupon.used ? 'Used' : 'Ready for One-Time Use'}</div>
-            </div>
-            <div class="divider"></div>
-            <div class="row"><span class="label">Created</span><span>${formatCouponDate(coupon.createdAt)}</span></div>
-            <div class="row"><span class="label">Order</span><span>${linkedSale?.receiptNo ?? 'Manual coupon'}</span></div>
-            <div class="row"><span class="label">Created By</span><span>${createdBy?.name ?? 'Unknown'}</span></div>
-            <div class="row"><span class="label">Use</span><span>One time only</span></div>
-            <div class="divider"></div>
-            <div class="center" style="font-size:12px;color:#666;">Present this coupon on your next purchase.</div>
-          </div>
+          ${buildCouponMarkup({
+            code: coupon.code,
+            amount: formatCurrency(coupon.amount, state.settings.currencySymbol),
+            createdAt: formatCouponDate(coupon.createdAt),
+            orderRef: linkedSale?.receiptNo ?? 'Manual coupon',
+            createdBy: createdBy?.name ?? 'Unknown',
+            used: coupon.used,
+          })}
           <script>
             window.onload = () => {
               window.print();
@@ -151,6 +135,33 @@ export function CouponsScreen() {
     printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
+  }
+
+  function handleSaveCouponImage(couponId: string) {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const coupon = state.coupons.find(item => item.id === couponId);
+    if (!coupon) return;
+    const linkedSale = coupon.sourceSaleId ? state.sales.find(sale => sale.id === coupon.sourceSaleId) : null;
+    const createdBy = state.users.find(user => user.id === coupon.createdBy);
+
+    const svg = buildCouponSvg({
+      code: coupon.code,
+      amount: formatCurrency(coupon.amount, state.settings.currencySymbol),
+      createdAt: formatCouponDate(coupon.createdAt),
+      orderRef: linkedSale?.receiptNo ?? 'Manual coupon',
+      createdBy: createdBy?.name ?? 'Unknown',
+      used: coupon.used,
+    });
+
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${coupon.code.toLowerCase()}-coupon.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -221,6 +232,14 @@ export function CouponsScreen() {
                       </p>
                     </div>
                     <div className="shrink-0 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveCouponImage(coupon.id)}
+                        className="inline-flex items-center justify-center rounded-full border border-border bg-background p-2 text-foreground"
+                        title="Save image"
+                      >
+                        <ImagePlus className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handlePrintCoupon(coupon.id)}
@@ -378,6 +397,92 @@ export function CouponsScreen() {
       ) : null}
     </div>
   );
+}
+
+function buildCouponMarkup({
+  code,
+  amount,
+  createdAt,
+  orderRef,
+  createdBy,
+  used,
+}: {
+  code: string;
+  amount: string;
+  createdAt: string;
+  orderRef: string;
+  createdBy: string;
+  used: boolean;
+}) {
+  return `
+    <div style="max-width:360px;margin:0 auto;background:#fff;border:1px dashed #999;padding:16px;">
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:700;">AKPOS Coupon</div>
+        <div style="margin-top:12px;font-size:22px;font-weight:700;letter-spacing:0.18em;">${code}</div>
+        <div style="margin-top:10px;font-size:18px;font-weight:700;color:#166534;">${amount}</div>
+        <div style="display:inline-block;margin-top:10px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${used ? '#f5f5f5' : '#dcfce7'};color:${used ? '#666' : '#166534'};">
+          ${used ? 'Used' : 'Ready for One-Time Use'}
+        </div>
+      </div>
+      <div style="border-top:1px dashed #bbb;margin:14px 0;"></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin:6px 0;"><span style="color:#666;">Created</span><span>${createdAt}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin:6px 0;"><span style="color:#666;">Order</span><span>${orderRef}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin:6px 0;"><span style="color:#666;">Created By</span><span>${createdBy}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin:6px 0;"><span style="color:#666;">Use</span><span>One time only</span></div>
+      <div style="border-top:1px dashed #bbb;margin:14px 0;"></div>
+      <div style="text-align:center;font-size:12px;color:#666;">Present this coupon on your next purchase.</div>
+    </div>
+  `;
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
+function buildCouponSvg({
+  code,
+  amount,
+  createdAt,
+  orderRef,
+  createdBy,
+  used,
+}: {
+  code: string;
+  amount: string;
+  createdAt: string;
+  orderRef: string;
+  createdBy: string;
+  used: boolean;
+}) {
+  const statusFill = used ? '#f5f5f5' : '#dcfce7';
+  const statusText = used ? '#666666' : '#166534';
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520">
+      <rect width="720" height="520" fill="#f5f5f5"/>
+      <rect x="70" y="40" width="580" height="440" rx="18" fill="#ffffff" stroke="#999999" stroke-dasharray="8 6" stroke-width="2"/>
+      <text x="360" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#111111">AKPOS Coupon</text>
+      <text x="360" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="8" fill="#111111">${escapeXml(code)}</text>
+      <text x="360" y="208" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#166534">${escapeXml(amount)}</text>
+      <rect x="232" y="228" width="256" height="34" rx="17" fill="${statusFill}"/>
+      <text x="360" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="${statusText}">${used ? 'Used' : 'Ready for One-Time Use'}</text>
+      <line x1="110" y1="290" x2="610" y2="290" stroke="#bbbbbb" stroke-dasharray="8 6" stroke-width="2"/>
+      <text x="120" y="332" font-family="Arial, sans-serif" font-size="18" fill="#666666">Created</text>
+      <text x="600" y="332" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#111111">${escapeXml(createdAt)}</text>
+      <text x="120" y="368" font-family="Arial, sans-serif" font-size="18" fill="#666666">Order</text>
+      <text x="600" y="368" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#111111">${escapeXml(orderRef)}</text>
+      <text x="120" y="404" font-family="Arial, sans-serif" font-size="18" fill="#666666">Created By</text>
+      <text x="600" y="404" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#111111">${escapeXml(createdBy)}</text>
+      <text x="120" y="440" font-family="Arial, sans-serif" font-size="18" fill="#666666">Use</text>
+      <text x="600" y="440" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#111111">One time only</text>
+      <text x="360" y="468" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">Present this coupon on your next purchase.</text>
+    </svg>
+  `.trim();
 }
 
 function buildCouponCode(sale: Sale | null): string {
