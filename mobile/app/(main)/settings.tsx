@@ -8,6 +8,8 @@ import { API_BASE_URL } from '@/services/api/client';
 import { AppSectionNav } from '@/components/app-section-nav';
 import { DataStatusCard } from '@/components/data-status-card';
 
+const APP_ENV_NAME = process.env.EXPO_PUBLIC_ENV_NAME ?? 'development';
+
 export default function SettingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<{
@@ -75,6 +77,7 @@ export default function SettingsScreen() {
           </View>
         ) : (
           <View style={{ gap: 10 }}>
+            <InfoCard label="App Environment" value={APP_ENV_NAME} />
             <InfoCard label="API Base URL" value={API_BASE_URL} />
             <InfoCard label="User ID" value={session.userId ?? 'Not logged in'} />
             <InfoCard label="Device ID" value={session.deviceId ?? 'Unavailable'} />
