@@ -6,6 +6,7 @@ import { syncStateRepository } from '@/db/repositories/sync-state-repository';
 import { fetchHealth, fetchReady } from '@/services/api/system-api';
 import { API_BASE_URL } from '@/services/api/client';
 import { AppSectionNav } from '@/components/app-section-nav';
+import { DataStatusCard } from '@/components/data-status-card';
 
 export default function SettingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -79,9 +80,14 @@ export default function SettingsScreen() {
             <InfoCard label="Device ID" value={session.deviceId ?? 'Unavailable'} />
             <InfoCard label="Has Token" value={session.token ? 'Yes' : 'No'} />
             <InfoCard label="Last Sync Cursor" value={lastCursor ?? 'None yet'} />
-            <InfoCard label="Health" value={backendStatus.health} />
-            <InfoCard label="Readiness" value={backendStatus.readiness} />
-            <InfoCard label="Backend Detail" value={backendStatus.detail} />
+            <DataStatusCard
+              title="Backend Status"
+              rows={[
+                { label: 'Health', value: backendStatus.health },
+                { label: 'Readiness', value: backendStatus.readiness },
+                { label: 'Detail', value: backendStatus.detail },
+              ]}
+            />
           </View>
         )}
 

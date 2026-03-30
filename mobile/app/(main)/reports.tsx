@@ -6,6 +6,7 @@ import { fetchReportSummary } from '@/services/api/reports-api';
 import { salesRepository } from '@/db/repositories/sales-repository';
 import { fetchHealth, fetchReady } from '@/services/api/system-api';
 import { AppSectionNav } from '@/components/app-section-nav';
+import { DataStatusCard } from '@/components/data-status-card';
 
 function formatCurrency(amount: number) {
   return `${amount.toLocaleString()} Ks`;
@@ -100,15 +101,23 @@ export default function ReportsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 }}>
-        <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10 }}>
-          <Text style={{ fontSize: 12, color: '#6b7280' }}>
-            Source: <Text style={{ fontWeight: '700', color: '#171717' }}>{sourceLabel === 'server' ? 'Server' : 'Offline fallback'}</Text>
-          </Text>
-          <Text style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>
-            Backend: <Text style={{ fontWeight: '700', color: '#171717' }}>{serverStatus.label}</Text>
-          </Text>
-          <Text style={{ marginTop: 4, fontSize: 11, color: '#6b7280' }}>{serverStatus.detail}</Text>
-        </View>
+        <DataStatusCard
+          title="Data Source"
+          rows={[
+            {
+              label: 'Source',
+              value: sourceLabel === 'server' ? 'Server' : 'Offline fallback',
+            },
+            {
+              label: 'Backend',
+              value: serverStatus.label,
+            },
+            {
+              label: 'Detail',
+              value: serverStatus.detail,
+            },
+          ]}
+        />
 
         {message ? (
           <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10 }}>

@@ -8,6 +8,7 @@ import { runSync } from '@/services/sync/sync-engine';
 import { getStoredSession } from '@/store/session-store';
 import { fetchOrders } from '@/services/api/orders-api';
 import { AppSectionNav } from '@/components/app-section-nav';
+import { DataStatusCard } from '@/components/data-status-card';
 
 interface OrderItem {
   id: string;
@@ -172,11 +173,15 @@ export default function OrdersScreen() {
         </View>
       </View>
       <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
-        <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#d6d3d1', backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 10 }}>
-          <Text style={{ fontSize: 12, color: '#6b7280' }}>
-            Source: <Text style={{ fontWeight: '700', color: '#171717' }}>{sourceLabel === 'server' ? 'Server' : 'Local offline cache'}</Text>
-          </Text>
-        </View>
+        <DataStatusCard
+          title="Data Source"
+          rows={[
+            {
+              label: 'Source',
+              value: sourceLabel === 'server' ? 'Server' : 'Local offline cache',
+            },
+          ]}
+        />
       </View>
       {syncMessage ? (
         <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>

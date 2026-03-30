@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePOS } from '@/lib/pos-context';
 import { formatCurrency, generateId, Product, Sale } from '@/lib/pos-store';
-import { Check, Lock, Search, TicketPercent } from 'lucide-react';
+import { Check, Lock, Printer, Search, TicketPercent } from 'lucide-react';
 
 export function CouponsScreen() {
   const { state, dispatch } = usePOS();
@@ -96,6 +96,63 @@ export function CouponsScreen() {
     setProfitUnlocked(false);
   }
 
+  function handlePrintCoupon(couponId: string) {
+    if (typeof window === 'undefined') return;
+    const coupon = state.coupons.find(item => item.id === couponId);
+    if (!coupon) return;
+    const linkedSale = coupon.sourceSaleId ? state.sales.find(sale => sale.id === coupon.sourceSaleId) : null;
+    const createdBy = state.users.find(user => user.id === coupon.createdBy);
+    const printWindow = window.open('', '_blank', 'width=420,height=680');
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>${coupon.code}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #111; background: #f5f5f5; }
+            .ticket { max-width: 360px; margin: 0 auto; background: #fff; border: 1px dashed #999; padding: 16px; }
+            .center { text-align: center; }
+            .brand { font-size: 18px; font-weight: 700; }
+            .code { margin-top: 12px; font-size: 22px; font-weight: 700; letter-spacing: 0.18em; }
+            .amount { margin-top: 10px; font-size: 18px; font-weight: 700; color: #166534; }
+            .divider { border-top: 1px dashed #bbb; margin: 14px 0; }
+            .row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin: 6px 0; }
+            .label { color: #666; }
+            .status { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: ${coupon.used ? '#f5f5f5' : '#dcfce7'}; color: ${coupon.used ? '#666' : '#166534'}; }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="center">
+              <div class="brand">AKPOS Coupon</div>
+              <div class="code">${coupon.code}</div>
+              <div class="amount">${formatCurrency(coupon.amount, state.settings.currencySymbol)}</div>
+              <div class="status">${coupon.used ? 'Used' : 'Ready for One-Time Use'}</div>
+            </div>
+            <div class="divider"></div>
+            <div class="row"><span class="label">Created</span><span>${formatCouponDate(coupon.createdAt)}</span></div>
+            <div class="row"><span class="label">Order</span><span>${linkedSale?.receiptNo ?? 'Manual coupon'}</span></div>
+            <div class="row"><span class="label">Created By</span><span>${createdBy?.name ?? 'Unknown'}</span></div>
+            <div class="row"><span class="label">Use</span><span>One time only</span></div>
+            <div class="divider"></div>
+            <div class="center" style="font-size:12px;color:#666;">Present this coupon on your next purchase.</div>
+          </div>
+          <script>
+            window.onload = () => {
+              window.print();
+              setTimeout(() => window.close(), 120);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <div className="px-4 pt-3 pb-2">
@@ -163,7 +220,15 @@ export function CouponsScreen() {
                         {formatCouponDate(coupon.createdAt)}
                       </p>
                     </div>
-                    <div className="shrink-0 w-20 flex justify-end">
+                    <div className="shrink-0 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePrintCoupon(coupon.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground"
+                      >
+                        <Printer className="w-3 h-3" />
+                        Print
+                      </button>
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${coupon.used ? 'border border-border bg-background text-muted-foreground' : 'border border-success/20 bg-success/10 text-success'}`}>
                         {coupon.used && <Check className="w-3 h-3" />}
                         {coupon.used ? 'Used' : 'Ready'}
