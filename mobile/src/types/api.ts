@@ -77,6 +77,23 @@ export interface ReportSummaryResponse {
   };
 }
 
+export interface ReportSalesResponse {
+  sales: Array<{
+    id: string;
+    receiptNo: string | null;
+    date: string | null;
+    time: string | null;
+    customerId: string | null;
+    staffId: string | null;
+    total: number;
+    amountPaid: number;
+    paymentMethod: string;
+    status: string;
+    itemCount: number;
+    paymentCount: number;
+  }>;
+}
+
 export interface HealthResponse {
   ok: boolean;
   service: string;
