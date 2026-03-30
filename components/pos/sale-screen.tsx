@@ -212,6 +212,7 @@ export function POSScreen() {
   const handleSaveReceiptToGallery = () => {
     if (!completedSale) return;
     const customer = state.customers.find(c => c.id === completedSale.customerId);
+    const staff = state.users.find(u => u.id === completedSale.staffId);
     dispatch({
       type: 'SAVE_RECEIPT_TO_GALLERY',
       record: {
@@ -224,6 +225,41 @@ export function POSScreen() {
         customerName: customer?.name ?? null,
       },
     });
+
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const svg = buildReceiptSvg({
+        receiptNo: completedSale.receiptNo,
+        dateTime: `${completedSale.date} ${completedSale.time}`,
+        shopName: state.settings.shopName,
+        address: state.settings.address,
+        phone: state.settings.phone,
+        customerName: customer?.name ?? null,
+        staffName: staff?.name ?? null,
+        items: completedSale.items.map(item => ({
+          name: `${item.productName}${item.variantLabel ? ` (${item.variantLabel})` : ''}`,
+          meta: `${item.quantity} x ${formatCurrency(item.unitPrice, sym)}`,
+          total: formatCurrency(item.total, sym),
+        })),
+        subtotal: formatCurrency(completedSale.subtotal, sym),
+        couponLine: completedSale.couponCode
+          ? `Coupon (${completedSale.couponCode}) -${formatCurrency(completedSale.couponDiscount ?? 0, sym)}`
+          : null,
+        total: formatCurrency(completedSale.total, sym),
+        cash: formatCurrency(completedSale.amountPaid, sym),
+        change: formatCurrency(completedSale.change, sym),
+        footer: state.settings.receiptFooter || null,
+      });
+
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${completedSale.receiptNo.toLowerCase()}-invoice.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handlePrintReceipt = () => {
@@ -943,4 +979,95 @@ function InvoiceRow({ label, value, valueClass }: { label: string; value: string
       <span className={`text-right text-foreground ${valueClass ?? ''}`}>{value}</span>
     </div>
   );
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
+function buildReceiptSvg({
+  receiptNo,
+  dateTime,
+  shopName,
+  address,
+  phone,
+  customerName,
+  staffName,
+  items,
+  subtotal,
+  couponLine,
+  total,
+  cash,
+  change,
+  footer,
+}: {
+  receiptNo: string;
+  dateTime: string;
+  shopName: string;
+  address: string;
+  phone: string;
+  customerName: string | null;
+  staffName: string | null;
+  items: Array<{ name: string; meta: string; total: string }>;
+  subtotal: string;
+  couponLine: string | null;
+  total: string;
+  cash: string;
+  change: string;
+  footer: string | null;
+}) {
+  const itemStartY = 190;
+  const itemGap = 42;
+  const totalsStartY = itemStartY + items.length * itemGap + 14;
+  const height = Math.max(520, totalsStartY + 150 + (footer ? 30 : 0));
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="720" height="${height}" viewBox="0 0 720 ${height}">
+      <rect width="720" height="${height}" fill="#f5f5f5"/>
+      <rect x="70" y="30" width="580" height="${height - 60}" rx="18" fill="#ffffff" stroke="#d6d3d1" stroke-width="2"/>
+      <text x="360" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111111">AKPOS</text>
+      <line x1="110" y1="96" x2="610" y2="96" stroke="#bbbbbb" stroke-dasharray="8 6" stroke-width="2"/>
+      <text x="360" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111111">${escapeXml(shopName)}</text>
+      <text x="360" y="154" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">${escapeXml(address)}</text>
+      <text x="360" y="176" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">${escapeXml(phone)}</text>
+
+      <text x="120" y="210" font-family="Arial, sans-serif" font-size="16" fill="#666666">Receipt No.</text>
+      <text x="600" y="210" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#111111">${escapeXml(receiptNo)}</text>
+      <text x="120" y="234" font-family="Arial, sans-serif" font-size="16" fill="#666666">Date</text>
+      <text x="600" y="234" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#111111">${escapeXml(dateTime)}</text>
+      ${customerName ? `<text x="120" y="258" font-family="Arial, sans-serif" font-size="16" fill="#666666">Customer</text>
+      <text x="600" y="258" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#111111">${escapeXml(customerName)}</text>` : ''}
+      ${staffName ? `<text x="120" y="${customerName ? 282 : 258}" font-family="Arial, sans-serif" font-size="16" fill="#666666">Staff</text>
+      <text x="600" y="${customerName ? 282 : 258}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#111111">${escapeXml(staffName)}</text>` : ''}
+
+      <line x1="110" y1="${customerName || staffName ? 300 : 276}" x2="610" y2="${customerName || staffName ? 300 : 276}" stroke="#bbbbbb" stroke-dasharray="8 6" stroke-width="2"/>
+      ${items.map((item, index) => {
+        const y = itemStartY + index * itemGap + 128;
+        return `
+          <text x="120" y="${y}" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#111111">${escapeXml(item.name)}</text>
+          <text x="120" y="${y + 20}" font-family="Arial, sans-serif" font-size="14" fill="#666666">${escapeXml(item.meta)}</text>
+          <text x="600" y="${y + 20}" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#111111">${escapeXml(item.total)}</text>
+        `;
+      }).join('')}
+
+      <line x1="110" y1="${totalsStartY + 108}" x2="610" y2="${totalsStartY + 108}" stroke="#bbbbbb" stroke-dasharray="8 6" stroke-width="2"/>
+      <text x="120" y="${totalsStartY + 138}" font-family="Arial, sans-serif" font-size="16" fill="#666666">Subtotal</text>
+      <text x="600" y="${totalsStartY + 138}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#111111">${escapeXml(subtotal)}</text>
+      ${couponLine ? `<text x="120" y="${totalsStartY + 164}" font-family="Arial, sans-serif" font-size="16" fill="#666666">${escapeXml(couponLine.split(' ')[0].includes('Coupon') ? couponLine.replace(/ -.*$/, '') : couponLine)}</text>
+      <text x="600" y="${totalsStartY + 164}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#166534">${escapeXml(couponLine.match(/-.*$/)?.[0] ?? '')}</text>` : ''}
+      <text x="120" y="${totalsStartY + (couponLine ? 198 : 172)}" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#111111">TOTAL</text>
+      <text x="600" y="${totalsStartY + (couponLine ? 198 : 172)}" text-anchor="end" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#166534">${escapeXml(total)}</text>
+      <text x="120" y="${totalsStartY + (couponLine ? 226 : 200)}" font-family="Arial, sans-serif" font-size="16" fill="#666666">Cash</text>
+      <text x="600" y="${totalsStartY + (couponLine ? 226 : 200)}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#111111">${escapeXml(cash)}</text>
+      <text x="120" y="${totalsStartY + (couponLine ? 252 : 226)}" font-family="Arial, sans-serif" font-size="16" fill="#666666">Change</text>
+      <text x="600" y="${totalsStartY + (couponLine ? 252 : 226)}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#166534">${escapeXml(change)}</text>
+      ${footer ? `<line x1="110" y1="${totalsStartY + (couponLine ? 278 : 252)}" x2="610" y2="${totalsStartY + (couponLine ? 278 : 252)}" stroke="#bbbbbb" stroke-dasharray="8 6" stroke-width="2"/>
+      <text x="360" y="${totalsStartY + (couponLine ? 308 : 282)}" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#666666">${escapeXml(footer)}</text>` : ''}
+    </svg>
+  `.trim();
 }
